@@ -50,13 +50,16 @@
       </nav>
       <div v-if="selectedTab === 'Hobbies'" class="text-center flex flex-col gap-4 text-neutral-600 text-xl mt-4 h-[150px]">
         <div class="flex justify-center">
-          <span v-for="(hobby, index) in hobbies" :key="hobby.name" @mouseenter="hoverHobby = index" @mouseleave="hoverHobby = defaultHobbyIndex" class="cursor-pointer text-3xl px-3 py-2 rounded-xl hover:bg-neutral-100">
+          <span v-for="(hobby, index) in hobbies" :key="hobby.name" @mouseenter="hoverHobby = index" @mouseleave="hoverHobby = defaultHobbyIndex" @click="hoverHobby = index" class="cursor-pointer text-3xl px-3 py-2 rounded-xl hover:bg-neutral-100">
             {{ hobby.emoji }}
           </span>
         </div>
         <div class="min-h-[100px]">
           <p>{{ hobbies[hoverHobby].description }}</p>
         </div>
+      </div>
+      <div v-else class="text-center text-neutral-600 text-xl mt-4 h-[150px]">
+        <p>Work in progress – Nothing to show yet 😅</p>
       </div>
     </div>
   </div>
@@ -72,12 +75,12 @@ const tabRefs = ref([])
 
 const hobbies = [
   { name: 'Hiking', emoji: '🌳', description: 'A designer that hikes? I always overpack when immersing myself in the woods. My latest trips were to Zion, Sedona, Shenandoah, Sequoia NP and Yosemite.' },
-  { name: 'Biking', emoji: '🚴🏼‍♂️', description: 'There is nothing like a morning bike ride at Rock Creek Park to inhale fresh air and hear the birds chirping.' },
+  { name: 'Biking', emoji: '🚴🏼‍♂️', description: 'There is nothing like a morning bike ride at Rock Creek Park to inhale fresh air, hear the birds chirping, and listen to the monkeys chatter (there is a zoo nearby).' },
   { name: 'Boardgames', emoji: '♟️', description: 'The collectionist in me feels the urge to buy new board games even when I haven\'t played several that I already own. Currently, I\'m enjoying Terraforming Mars with my friends.' },
-  { name: 'Watercoloring', emoji: '🎨', description: 'I just got into watercoloring. I bought my Winsor & Newton starter kit, and I don\'t know why I often find myself painting nigiris.' },
+  { name: 'Watercoloring', emoji: '🎨', description: 'I just got into watercoloring. I bought my Winsor & Newton starter kit, and I don\'t know why I often find myself painting nigiris as my first motif.' },
   { name: 'Coffee', emoji: '☕️', description: 'This summer was the perfect excuse I needed to perfect my iced coffee latte recipe. I brew coffee the night before and then refrigerate it for the morning.' },
   { name: 'Cooking', emoji: '🥘', description: 'I love learning and cooking new recipes. I\'m specially interested in korean, japanese, and brazilian cuisines. My current favorite dish is probably Katsu Curry.' },
-  { name: 'Videogames', emoji: '🧙🏻‍♂️', description: 'I play videogames with my highschool friends. Right now, we are playing Overwatch and Final Fantasy XIV.' }
+  { name: 'Videogames', emoji: '🧙🏻‍♂️', description: 'I have played videogames since I was a little kid. Right now, I\'m playing Overwatch and Final Fantasy XIV with my wife and highschool friends.' }
 ]
 
 const defaultHobbyIndex = 0
