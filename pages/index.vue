@@ -17,7 +17,8 @@
         <p>
           By night, I'm building 
           <a href="https://heywaffle.app/" class="font-semibold text-black hover:underline hover:text-[#ff4f1f]">Waffle</a>, 
-          a visual organization app – a digital homepage with fun and dynamic widgets.
+          a visual organization app – a digital homepage with fun and dynamic widgets. And I'm also collaborating on a secret fantasy RPG, working on the overall design, mechanics, and UI.
+
         </p>
         <p>
           On the side, I'm a <a href="https://www.instagram.com/soydanielchung/" class="font-semibold text-black hover:underline hover:text-[#ff4f1f]">tech content creator</a> in Spanish, 
