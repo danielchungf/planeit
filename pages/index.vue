@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-white">
-    <header class="sticky top-0 flex justify-between items-center px-5 py-4 border-b bg-white">
+    <header class="sticky top-0 z-10 flex justify-between items-center px-5 py-4 border-b bg-white">
       <div class="text-xl font-bold font-cabinet">
         <NuxtLink to="/">DANIEL CHUNG</NuxtLink>
       </div>
@@ -23,62 +23,69 @@
         </h2>
       </div>
 
-      <!-- <section id="work" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section id="work" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <PortfolioItem
           v-for="item in portfolioItems"
-          :key="item.title"
-          :image="item.image"
+          :key="item.id"
           :title="item.title"
           :category="item.category"
           :description="item.description"
         />
-      </section> -->
+      </section>
     </main>
+    <Footer />
   </div>
 </template>
 
 <script setup>
 import PortfolioItem from '~/components/PortfolioItem.vue'
+import Footer from '~/components/Footer.vue'
+import { useHead } from '#imports'
+
+useHead({
+  title: 'Daniel Chung',
+  // Add other meta tags as needed
+})
 
 const portfolioItems = [
   {
-    image: '/path-to-supper-image.jpg',
+    id: 1,
     title: 'Supper',
     category: 'Product design',
     description: 'An AI content platform for organizations. All your databases connected in one place.'
   },
   {
-    image: '/path-to-workmate-image.jpg',
+    id: 2,
     title: 'Workmate',
     category: 'Product design',
     description: 'An AI content platform for organizations. All your databases connected in one place.'
   },
   {
-    image: '/path-to-ritual-dental-image.jpg',
+    id: 3,
     title: 'Ritual Dental',
     category: 'Product design',
     description: 'An AI content platform for organizations. All your databases connected in one place.'
   },
   {
-    image: '/path-to-waffle-image.jpg',
+    id: 4,
     title: 'Waffle',
     category: 'Product design',
     description: 'An AI content platform for organizations. All your databases connected in one place.'
   },
   {
-    image: '/path-to-loop-image.jpg',
+    id: 5,
     title: 'Loop',
     category: 'Product design',
     description: 'An AI content platform for organizations. All your databases connected in one place.'
   },
   {
-    image: '/path-to-egg-custard-image.jpg',
+    id: 6,
     title: 'Egg Custard',
     category: 'Product design',
     description: 'An AI content platform for organizations. All your databases connected in one place.'
   },
   {
-    image: '/path-to-almanac-image.jpg',
+    id: 7,
     title: 'Almanac',
     category: 'Product design',
     description: 'An AI content platform for organizations. All your databases connected in one place.'
