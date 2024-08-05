@@ -55,7 +55,7 @@ const portfolioItems = [
     title: 'Supper',
     image: "/supper.jpg",
     category: 'Product design',
-    description: 'An AI content platform for enterprises. All your databases connected in one place.',
+    description: 'An AI content platform for enterprises, where all your databases are connected in one place.',
   },
   {
     id: 2,
