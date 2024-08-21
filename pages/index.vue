@@ -28,21 +28,23 @@
           </select>
         </div>
         <button @click="createTrip" class="bg-[#FF8343] text-white font-semibold px-4 py-2 rounded-md hover:bg-[#E67339] transition-colors duration-300">
-          Create a trip
+          Create trip
         </button>
       </div>
 
     <!-- Display Section -->
-    <div v-if="tripCreated" class="bg-white p-6 rounded-lg border border-gray-300 w-[500px] flex gap-8">
-        <div class="w-full flex items-center justify-center">
-            <div class="text-center">
-            <h2 class="text-2xl font-bold mb-2">{{ createdTripName }}</h2>
-            <p v-if="createdDateRange.start && createdDateRange.end" class="text-lg">
+    <div v-if="tripCreated" class="bg-white rounded-lg border border-gray-300 overflow-hidden w-[300px] h-[320px]">
+      <div 
+        class="h-full bg-cover bg-center flex flex-col justify-end" 
+        :style="{ backgroundImage: `url(${getImageUrl('spain.png')})` }"
+      >
+        <div class="p-4 flex flex-col justify-center items-center gap-2">
+          <h2 class="text-xl font-bold text-center">{{ createdTripName }}</h2>
+          <p v-if="createdDateRange.start && createdDateRange.end" class="text-md text-gray-600 text-center">
             {{ formatDate(createdDateRange.start) }} – {{ formatDate(createdDateRange.end) }}
-            </p>
-            <p class="text-lg mt-2">{{ category }}</p>
-            </div>
+          </p>
         </div>
+      </div>
     </div>
   </div>
 </template>
@@ -78,6 +80,10 @@ function formatDate(date) {
   if (!date) return ''
   const options = { month: 'short', day: 'numeric', year: 'numeric' }
   return new Date(date).toLocaleDateString('en-US', options)
+}
+
+function getImageUrl(name) {
+  return new URL(`../assets/${name}`, import.meta.url).href
 }
 </script>
 
