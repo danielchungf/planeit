@@ -47,6 +47,9 @@ importers:
       vue-router:
         specifier: ^4.3.3
         version: 4.4.3(vue@3.4.38(typescript@5.5.4))
+      vue-sonner:
+        specifier: ^1.1.4
+        version: 1.1.4
     devDependencies:
       '@nuxtjs/tailwindcss':
         specifier: ^6.12.1
@@ -3569,6 +3572,9 @@ packages:
     resolution: {integrity: sha512-EJ/8TANKhFj+LefDuOvZykwMr3rrLFPLNb++lNBqPOpVigT2ActRg6icH9RFQVm4nHwlHIHSGm5OY/Clar9yIg==}
     peerDependencies:
       vue: ^3.2.0
+
+  vue-sonner@1.1.4:
+    resolution: {integrity: sha512-ATt+o38ALfPBfmaT3rfr10K+mkZ/7EdqZewEZVI3krSc1RaIDK8fI9gQro0Jlh8HZcOHv2oUDJufSIUl/qpdOA==}
 
   vue@3.4.38:
     resolution: {integrity: sha512-f0ZgN+mZ5KFgVv9wz0f4OgVKukoXtS3nwET4c2vLBGQR50aI8G0cqbFtLlX9Yiyg3LFGBitruPHt2PxwTduJEw==}
@@ -7482,6 +7488,8 @@ snapshots:
   vue-screen-utils@1.0.0-beta.13(vue@3.4.38(typescript@5.5.4)):
     dependencies:
       vue: 3.4.38(typescript@5.5.4)
+
+  vue-sonner@1.1.4: {}
 
   vue@3.4.38(typescript@5.5.4):
     dependencies:
