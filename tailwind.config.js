@@ -9,6 +9,9 @@ module.exports = {
         'ultralight': 100,
         'regular': 400,
         'ultrabold': 800,
+      },
+      colors: {
+        background: '#FAF7F2',
       }
     },
   },
