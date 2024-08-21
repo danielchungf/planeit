@@ -50,8 +50,9 @@
       </Button>
     </div>
 
+    <!-- Trips Section -->
    <div class="flex flex-col gap-8">
-    <div class="flex flex-col gap-5 flex-grow">
+    <div v-if="ongoingTrips.length > 0" class="flex flex-col gap-5 flex-grow">
       <h2 class="text-2xl font-bold">Ongoing trips</h2>
       <div class="flex flex-wrap gap-4">
         <div v-for="(trip, index) in ongoingTrips" :key="index" 
@@ -75,7 +76,7 @@
       </div>
     </div>
 
-    <div class="flex flex-col gap-5">
+    <div v-if="upcomingTrips.length > 0" class="flex flex-col gap-5">
       <h2 class="text-2xl font-bold">Upcoming trips</h2>
       <div class="flex flex-wrap gap-4">
         <div v-for="(trip, index) in upcomingTrips" :key="index" 
@@ -99,7 +100,7 @@
       </div>
     </div>
 
-    <div class="flex flex-col gap-5">
+    <div v-if="pastTrips.length > 0" class="flex flex-col gap-5">
       <h2 class="text-2xl font-bold">Past trips</h2>
       <div class="flex flex-wrap gap-4">
         <div v-for="(trip, index) in pastTrips" :key="index" 
@@ -122,6 +123,10 @@
         </div>
       </div>
     </div>
+
+    <div v-if="!ongoingTrips.length && !upcomingTrips.length && !pastTrips.length" class="text-center text-gray-500">
+      No trips planned yet. Create a new trip to get started!
+    </div>
   </div>
 </div>
 </template>
@@ -130,12 +135,12 @@
 import { TicketsPlane } from 'lucide-vue-next';
 import { ArrowRight } from 'lucide-vue-next';
 import { Trash2 } from 'lucide-vue-next';
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'vue-sonner'
 import type { DateRange } from 'radix-vue'
-import { getLocalTimeZone, today } from '@internationalized/date'
+import { getLocalTimeZone, today, parseDate, type DateValue } from '@internationalized/date'
 import { RangeCalendar } from '@/components/ui/range-calendar'
 import {
   Select,
@@ -161,7 +166,60 @@ const value = ref({
 const tripName = ref('')
 const destination = ref('')
 const selectedCategory = ref('')
-const trips = ref([])
+const trips = ref<any[]>([]) // Explicitly type trips as an array
+
+// Load trips from localStorage on component mount
+onMounted(() => {
+  console.log('Component mounted')
+  const savedTrips = localStorage.getItem('trips')
+  console.log('Saved trips from localStorage:', savedTrips)
+  if (savedTrips && savedTrips !== '""') {
+    try {
+      const parsedTrips = JSON.parse(savedTrips, (key, value) => {
+        if (key === 'dateRange' && typeof value === 'object' && value !== null) {
+          return {
+            start: value.start ? parseDate(value.start) : null,
+            end: value.end ? parseDate(value.end) : null
+          }
+        }
+        return value
+      })
+      trips.value = Array.isArray(parsedTrips) ? parsedTrips : []
+      console.log('Parsed trips:', trips.value)
+    } catch (error) {
+      console.error('Error parsing trips from localStorage:', error)
+      trips.value = [] // Reset to empty array if parsing fails
+    }
+  } else {
+    console.log('No saved trips found in localStorage')
+    trips.value = [] // Ensure trips.value is an empty array if no saved trips
+  }
+})
+
+// Watch for changes in trips and save to localStorage
+watch(trips, (newValue) => {
+  console.log('Trips changed:', newValue)
+  saveTripsToLocalStorage()
+}, { deep: true })
+
+// Function to save trips to localStorage
+const saveTripsToLocalStorage = () => {
+  try {
+    const tripsToSave = trips.value.map(trip => ({
+      ...trip,
+      dateRange: {
+        start: trip.dateRange.start.toString(),
+        end: trip.dateRange.end.toString()
+      }
+    }))
+    const tripsString = JSON.stringify(tripsToSave)
+    console.log('Saving trips to localStorage:', tripsString)
+    localStorage.setItem('trips', tripsString)
+    console.log('Trips saved successfully')
+  } catch (error) {
+    console.error('Error saving trips to localStorage:', error)
+  }
+}
 
 const formattedDateRange = computed(() => {
   if (value.value.start && value.value.end) {
@@ -174,7 +232,12 @@ const formattedDateRange = computed(() => {
 
 const getCurrentDate = () => new Date()
 
+// Modify the computed properties to handle potential non-array trips.value
 const ongoingTrips = computed(() => {
+  if (!Array.isArray(trips.value)) {
+    console.error('trips.value is not an array:', trips.value)
+    return []
+  }
   return trips.value.filter(trip => {
     const endDate = new Date(trip.dateRange.end.toString())
     const startDate = new Date(trip.dateRange.start.toString())
@@ -184,6 +247,10 @@ const ongoingTrips = computed(() => {
 })
 
 const upcomingTrips = computed(() => {
+  if (!Array.isArray(trips.value)) {
+    console.error('trips.value is not an array:', trips.value)
+    return []
+  }
   return trips.value.filter(trip => {
     const startDate = new Date(trip.dateRange.start.toString())
     const currentDate = getCurrentDate()
@@ -192,6 +259,10 @@ const upcomingTrips = computed(() => {
 })
 
 const pastTrips = computed(() => {
+  if (!Array.isArray(trips.value)) {
+    console.error('trips.value is not an array:', trips.value)
+    return []
+  }
   return trips.value.filter(trip => {
     const endDate = new Date(trip.dateRange.end.toString())
     const currentDate = getCurrentDate()
@@ -208,12 +279,18 @@ const createTrip = () => {
     name: tripName.value,
     destination: destination.value,
     category: selectedCategory.value,
-    dateRange: value.value,
+    dateRange: {
+      start: value.value.start,
+      end: value.value.end
+    },
     isNew: true
   }
 
+  console.log('Creating new trip:', newTrip)
   trips.value.push(newTrip)
-  
+  console.log('Updated trips:', trips.value)
+  saveTripsToLocalStorage() // Call this explicitly after adding a new trip
+
   // Reset input values for the next trip
   tripName.value = ''
   destination.value = ''
@@ -226,6 +303,7 @@ const createTrip = () => {
   // Remove the isNew property after animation
   setTimeout(() => {
     newTrip.isNew = false
+    saveTripsToLocalStorage() // Save again after removing isNew
   }, 500)
 }
 
