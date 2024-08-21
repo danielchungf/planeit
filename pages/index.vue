@@ -1,5 +1,5 @@
 <template>
-    <div class="flex flex-row m-5 gap-5">
+    <div class="flex flex-row m-5 gap-5 items-start">
       <!-- Input Section -->
         <div class="inline-flex flex-col gap-2 bg-white p-6 rounded-lg border border-gray-300">
             <label for="tripName" class="block text-sm font-medium text-gray-700">Name of the trip</label>
@@ -45,17 +45,26 @@
             </Button>
         </div>
 
-        <div v-if="isTripCreated" class="flex flex-col gap-2 bg-white p-6 rounded-lg border border-gray-300 w-[300px] h-[150px]">
-          <label class="block text-sm font-medium text-gray-700">{{ displayedTripName }}</label>
-          <label class="block text-sm font-medium text-gray-700">{{ displayedDestination }}</label>
-          <label class="block text-sm font-medium text-gray-700">{{ formattedDateRange }}</label>
-          <label class="block text-sm font-medium text-gray-700">{{ displayedCategory }}</label>
+        <div v-if="isTripCreated" class="flex flex-col gap-1 bg-white px-4 py-4 rounded-lg border border-gray-300 w-[250px] h-auto relative group">
+            <label class="block text-sm font-regular text-gray-400">{{ formattedDateRange }}</label>
+            <title class="block text-xl font-medium text-gray-800">{{ displayedTripName }}</title>
+            <label class="block text-sm font-medium text-gray-700">{{ displayedDestination }} • {{ displayedCategory }}</label>
+          <div class="w-fill flex items-center justify-end">
+            <Button class="bg-neutral-200 hover:bg-[#FF8343] text-gray-800 hover:text-white h-10 w-10 p-0 rounded-full">
+            <ArrowRight />
+          </Button>
+          <Button  @click="deleteTrip" class="absolute top-[-8px] right-[-8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center">
+          <Trash2 class= "text-white w-4 h-4" />
+        </Button>
+        </div>
         </div>  
     </div>
 </template>
 
 <script setup lang="ts">
 import { TicketsPlane } from 'lucide-vue-next';
+import { ArrowRight } from 'lucide-vue-next';
+import { Trash2 } from 'lucide-vue-next';
 import { ref, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -115,5 +124,9 @@ const createTrip = () => {
     start: today(getLocalTimeZone()),
     end: today(getLocalTimeZone()).add({ days: 7 }),
   }
+}
+
+const deleteTrip = () => {
+  isTripCreated.value = false
 }
 </script>
