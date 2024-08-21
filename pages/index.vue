@@ -1,5 +1,6 @@
 <template>
   <div class="flex flex-row m-5 gap-5 items-start">
+   
     <!-- Input Section -->
     <div class="inline-flex flex-col gap-2 bg-white p-6 rounded-lg border border-gray-300">
       <label for="tripName" class="block text-sm font-medium text-gray-700">Name of the trip</label>
@@ -49,28 +50,80 @@
       </Button>
     </div>
 
-    <!-- Display multiple trips -->
-    <div class="flex flex-wrap gap-4">
-      <div v-for="(trip, index) in trips" :key="index" 
-           class="flex flex-col gap-1 bg-white px-4 py-4 rounded-lg border border-gray-300 w-[250px] h-auto relative group transition-all duration-300 ease-out"
-           :class="{ 'animate-new-trip': trip.isNew, 'animate-delete-trip': trip.isDeleting }">
-        <label class="block text-sm font-regular text-gray-400">{{ formatDateRange(trip.dateRange) }}</label>
-        <title class="block text-xl font-medium text-gray-800">{{ trip.name }}</title>
-        <label class="block text-sm font-regular text-gray-600">{{ trip.destination }} • {{ trip.category }}</label>
-        <div class="w-fill flex items-center justify-end">
-          <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
-            <ArrowRight />
-          </Button>
-          <Button 
-            @click="deleteTrip(index)"
-            class="absolute top-[-8px] right-[-8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center"
-          >
-            <Trash2 class="text-white w-4 h-4" />
-          </Button>
+   <div class="flex flex-col gap-8">
+    <div class="flex flex-col gap-5 flex-grow">
+      <h2 class="text-2xl font-bold">Ongoing trips</h2>
+      <div class="flex flex-wrap gap-4">
+        <div v-for="(trip, index) in ongoingTrips" :key="index" 
+             class="flex flex-col gap-1 bg-white px-4 py-4 rounded-lg border border-gray-300 w-[250px] h-auto relative group transition-all duration-300 ease-out"
+             :class="{ 'animate-new-trip': trip.isNew, 'animate-delete-trip': trip.isDeleting }">
+          <label class="block text-sm font-regular text-gray-400">{{ formatDateRange(trip.dateRange) }}</label>
+          <title class="block text-xl font-medium text-gray-800">{{ trip.name }}</title>
+          <label class="block text-sm font-regular text-gray-600">{{ trip.destination }} • {{ trip.category }}</label>
+          <div class="w-fill flex items-center justify-end">
+            <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
+              <ArrowRight />
+            </Button>
+            <Button 
+              @click="deleteTrip(index)"
+              class="absolute top-[-8px] right-[-8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center"
+            >
+              <Trash2 class="text-white w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-5">
+      <h2 class="text-2xl font-bold">Upcoming trips</h2>
+      <div class="flex flex-wrap gap-4">
+        <div v-for="(trip, index) in upcomingTrips" :key="index" 
+             class="flex flex-col gap-1 bg-white px-4 py-4 rounded-lg border border-gray-300 w-[250px] h-auto relative group transition-all duration-300 ease-out"
+             :class="{ 'animate-new-trip': trip.isNew, 'animate-delete-trip': trip.isDeleting }">
+          <label class="block text-sm font-regular text-gray-400">{{ formatDateRange(trip.dateRange) }}</label>
+          <title class="block text-xl font-medium text-gray-800">{{ trip.name }}</title>
+          <label class="block text-sm font-regular text-gray-600">{{ trip.destination }} • {{ trip.category }}</label>
+          <div class="w-fill flex items-center justify-end">
+            <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
+              <ArrowRight />
+            </Button>
+            <Button 
+              @click="deleteTrip(index)"
+              class="absolute top-[-8px] right-[-8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center"
+            >
+              <Trash2 class="text-white w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-5">
+      <h2 class="text-2xl font-bold">Past trips</h2>
+      <div class="flex flex-wrap gap-4">
+        <div v-for="(trip, index) in pastTrips" :key="index" 
+             class="flex flex-col gap-1 bg-white px-4 py-4 rounded-lg border border-gray-300 w-[250px] h-auto relative group transition-all duration-300 ease-out"
+             :class="{ 'animate-new-trip': trip.isNew, 'animate-delete-trip': trip.isDeleting }">
+          <label class="block text-sm font-regular text-gray-400">{{ formatDateRange(trip.dateRange) }}</label>
+          <title class="block text-xl font-medium text-gray-800">{{ trip.name }}</title>
+          <label class="block text-sm font-regular text-gray-600">{{ trip.destination }} • {{ trip.category }}</label>
+          <div class="w-fill flex items-center justify-end">
+            <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
+              <ArrowRight />
+            </Button>
+            <Button 
+              @click="deleteTrip(index)"
+              class="absolute top-[-8px] right-[-8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center"
+            >
+              <Trash2 class="text-white w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   </div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -117,6 +170,33 @@ const formattedDateRange = computed(() => {
     return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
   }
   return ''
+})
+
+const getCurrentDate = () => new Date()
+
+const ongoingTrips = computed(() => {
+  return trips.value.filter(trip => {
+    const endDate = new Date(trip.dateRange.end.toString())
+    const startDate = new Date(trip.dateRange.start.toString())
+    const currentDate = getCurrentDate()
+    return endDate >= currentDate && startDate <= currentDate
+  })
+})
+
+const upcomingTrips = computed(() => {
+  return trips.value.filter(trip => {
+    const startDate = new Date(trip.dateRange.start.toString())
+    const currentDate = getCurrentDate()
+    return startDate > currentDate
+  })
+})
+
+const pastTrips = computed(() => {
+  return trips.value.filter(trip => {
+    const endDate = new Date(trip.dateRange.end.toString())
+    const currentDate = getCurrentDate()
+    return endDate < currentDate
+  })
 })
 
 const createTrip = () => {
