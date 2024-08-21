@@ -12,7 +12,7 @@
           <DatePicker 
             v-model="dateRange" 
             is-range 
-            color="custom"
+            color="orange"
             class="w-full [&_.vc-pane-container]:!w-full [&_.vc-weeks]:!w-full"
           />
         </div>
