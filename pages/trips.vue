@@ -18,7 +18,7 @@
           <Input type="text" class="mb-2" placeholder="Trip to Yosemite National Park..." v-model="tripName" />
           <label for="destination" class="block text-sm font-medium text-gray-700">Destination</label>
           <Input type="text" class="mb-2" placeholder="Peru, Tokyo, Barcelona... " v-model="destination" />
-          <label for="dates" class="block text-sm font-medium text-gray-700">Range of dates</label>
+          <label for="dates" class="block text-sm font-medium text-gray-700">Date range</label>
           <Popover>
             <PopoverTrigger as-child>
               <Button
@@ -132,8 +132,27 @@
           <div class="flex flex-row gap-2">
             <Badge :class="getCategoryColors(selectedTrip.category)">{{ selectedTrip.category }}</Badge>
             <Badge class="bg-neutral-100 text-neutral-600 hover:bg-neutral-200">{{ selectedTrip.destination }}</Badge>
-            <Badge class="bg-transparent border-neutral-300 text-neutral-600 hover:bg-transparent">{{ formatDateRange(selectedTrip) }}</Badge>
-            <Badge class="bg-transparent border-neutral-300 text-neutral-600 hover:bg-transparent">{{ calculateDaysAndNights(selectedTrip) }}</Badge>
+            <Popover v-model:open="isDatePopoverOpen">
+              <PopoverTrigger asChild>
+                <Badge class="bg-transparent border-neutral-300 text-neutral-600 hover:bg-transparent cursor-pointer">
+                  {{ formatDateRange(selectedTrip) }}
+                </Badge>
+              </PopoverTrigger>
+              <PopoverContent class="w-auto p-4">
+                <RangeCalendar 
+                  v-model="editDateRange" 
+                  :initial-focus="true"
+                  :number-of-months="2"
+                  @update:start-value="updateStartDate"
+                  @update:end-value="updateEndDate"
+                />
+                <div class="mt-4 flex justify-end gap-2">
+                  <Button @click="closePopover" variant="outline" size="sm">Cancel</Button>
+                  <Button @click="saveDateRangeAndClose" size="sm">Save</Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Badge class="bg-neutral-100 text-neutral-600 hover:bg-neutral-200">{{ calculateDaysAndNights(selectedTrip) }}</Badge>
           </div>
     
         </div>
@@ -218,7 +237,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 /* start Date picker */
-import { type Ref, ref, computed, onMounted } from 'vue'
+import { type Ref, ref, computed, onMounted, watch } from 'vue'
 import {
   CalendarDate,
   DateFormatter,
@@ -270,6 +289,7 @@ const selectedTrip = ref<Trip | null>(null)
 // Add this to manage dialog state
 const isDialogOpen = ref(false)
 const isEditing = ref(false)
+const isDatePopoverOpen = ref(false)
 
 // Computed property to check if all fields are filled
 const isFormValid = computed(() => {
@@ -490,6 +510,55 @@ function updateTrip() {
 function truncateName(name: string, maxLength: number = 30): string {
   if (name.length <= maxLength) return name;
   return name.slice(0, maxLength) + '...';
+}
+
+const editDateRange = ref({
+  start: null,
+  end: null
+})
+
+watch(() => selectedTrip.value, (newTrip) => {
+  if (newTrip) {
+    editDateRange.value = {
+      start: newTrip.startDate,
+      end: newTrip.endDate
+    }
+  }
+}, { immediate: true })
+
+function updateStartDate(date) {
+  editDateRange.value.start = date
+}
+
+function updateEndDate(date) {
+  editDateRange.value.end = date
+}
+
+function saveDateRange() {
+  if (selectedTrip.value && editDateRange.value.start && editDateRange.value.end) {
+    selectedTrip.value.startDate = editDateRange.value.start
+    selectedTrip.value.endDate = editDateRange.value.end
+
+    // Update the trip in the appropriate list
+    const lists = [ongoingTrips, upcomingTrips, pastTrips]
+    lists.forEach(list => {
+      const index = list.value.findIndex(trip => trip.id === selectedTrip.value?.id)
+      if (index !== -1) {
+        list.value[index] = { ...selectedTrip.value }
+      }
+    })
+
+    saveTripsToLocalStorage()
+  }
+}
+
+function closePopover() {
+  isDatePopoverOpen.value = false
+}
+
+function saveDateRangeAndClose() {
+  saveDateRange()
+  closePopover()
 }
 
 onMounted(() => {
