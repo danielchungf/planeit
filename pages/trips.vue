@@ -123,12 +123,40 @@
     <!-- Content for the sidebar ends -->
 
     <!-- Content for the trip view starts -->
-    <div class="flex-1 bg-white p-6">
-      <div v-if="selectedTrip" class="space-y-4">
-        <h1 class="text-2xl font-bold">{{ selectedTrip.name }}</h1>
-        <p><strong>Destination:</strong> {{ selectedTrip.destination }}</p>
-        <p><strong>Category:</strong> {{ selectedTrip.category }}</p>
-        <p><strong>Date Range:</strong> {{ formatDateRange(selectedTrip) }}</p>
+    <div class="flex-1 bg-white">
+      <div v-if="selectedTrip" class="h-[130px] border-b flex flex-row px-6 justify-between pt-5">
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-row gap-2">
+            <Badge :class="getCategoryColors(selectedTrip.category)">{{ selectedTrip.category }}</Badge>
+            <Badge class="bg-neutral-200 text-neutral-600 hover:bg-neutral-200">{{ selectedTrip.destination }}</Badge>
+          </div>
+            <h1 class="text-2xl font-bold">{{ selectedTrip.name }}</h1>
+            <label class="block text-sm font-regular text-gray-600">{{ formatDateRange(selectedTrip) }} • {{ calculateDaysAndNights(selectedTrip) }}</label>
+        </div>
+        <div class="flex flex-col justify-start">
+            <AlertDialog>
+                <AlertDialogTrigger>
+                    <Button 
+                class="cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-transparent border border-gray-300 hover:bg-red-100 hover:border-red-200 group"
+            >
+                        <Trash2 class="text-gray-600 w-4 h-4 group-hover:text-red-500 transition-colors duration-200" />
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {{ selectedTrip.name }}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete this trip and its data from our servers. Serious stuff!
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction @click="deleteTrip">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+
       </div>
 
       <div v-else class="flex justify-center items-center h-full text-sm font-medium text-neutral-400">
@@ -144,7 +172,9 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { TicketsPlane } from 'lucide-vue-next'
+import { Trash2 } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -163,6 +193,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 /* start Date picker */
 import { type Ref, ref, computed, onMounted } from 'vue'
@@ -270,6 +312,16 @@ function formatDateRange(trip: Trip) {
   return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
 }
 
+function calculateDaysAndNights(trip: Trip) {
+  const start = new Date(trip.startDate.toString())
+  const end = new Date(trip.endDate.toString())
+  const diffTime = Math.abs(end.getTime() - start.getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  const days = diffDays
+  const nights = days - 1
+  return `${days} day${days !== 1 ? 's' : ''}, ${nights} night${nights !== 1 ? 's' : ''}`
+}
+
 function generateUniqueId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
@@ -298,22 +350,29 @@ function saveTripsToLocalStorage() {
 function loadTripsFromLocalStorage() {
   const storedTrips = localStorage.getItem('trips')
   if (storedTrips) {
-    const parsedTrips = JSON.parse(storedTrips)
-    ongoingTrips.value = parsedTrips.ongoing.map(trip => ({
-      ...trip,
-      startDate: safeParseDateString(trip.startDate),
-      endDate: safeParseDateString(trip.endDate)
-    })) || []
-    upcomingTrips.value = parsedTrips.upcoming.map(trip => ({
-      ...trip,
-      startDate: safeParseDateString(trip.startDate),
-      endDate: safeParseDateString(trip.endDate)
-    })) || []
-    pastTrips.value = parsedTrips.past.map(trip => ({
-      ...trip,
-      startDate: safeParseDateString(trip.startDate),
-      endDate: safeParseDateString(trip.endDate)
-    })) || []
+    try {
+      const parsedTrips = JSON.parse(storedTrips)
+      ongoingTrips.value = (parsedTrips.ongoing || []).map(trip => ({
+        ...trip,
+        startDate: safeParseDateString(trip.startDate),
+        endDate: safeParseDateString(trip.endDate)
+      }))
+      upcomingTrips.value = (parsedTrips.upcoming || []).map(trip => ({
+        ...trip,
+        startDate: safeParseDateString(trip.startDate),
+        endDate: safeParseDateString(trip.endDate)
+      }))
+      pastTrips.value = (parsedTrips.past || []).map(trip => ({
+        ...trip,
+        startDate: safeParseDateString(trip.startDate),
+        endDate: safeParseDateString(trip.endDate)
+      }))
+    } catch (error) {
+      console.error('Error parsing stored trips:', error)
+      ongoingTrips.value = []
+      upcomingTrips.value = []
+      pastTrips.value = []
+    }
   }
 }
 
@@ -334,6 +393,37 @@ function safeParseDateString(value: any): CalendarDate {
   }
   console.error('Invalid date value:', value);
   return today(getLocalTimeZone()); // fallback to today's date
+}
+
+function deleteTrip() {
+  if (selectedTrip.value) {
+    ongoingTrips.value = ongoingTrips.value.filter(trip => trip.id !== selectedTrip.value?.id)
+    upcomingTrips.value = upcomingTrips.value.filter(trip => trip.id !== selectedTrip.value?.id)
+    pastTrips.value = pastTrips.value.filter(trip => trip.id !== selectedTrip.value?.id)
+
+    saveTripsToLocalStorage()
+
+    selectedTrip.value = null
+  }
+}
+
+function getCategoryColors(category: string) {
+  switch (category.toLowerCase()) {
+    case 'vacation':
+      return 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+    case 'work':
+      return 'bg-red-100 text-red-800 hover:bg-red-200'
+    case 'family':
+      return 'bg-sky-100 text-sky-800 hover:bg-sky-200'
+    case 'health':
+      return 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
+    case 'education':
+      return 'bg-purple-100 text-purple-800 hover:bg-purple-200'
+    case 'nature':
+      return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+    default:
+      return 'bg-rose-100 text-rose-800 hover:bg-rose-200' // for 'Other' or any undefined category
+  }
 }
 
 onMounted(() => {
