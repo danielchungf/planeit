@@ -55,16 +55,21 @@
     <div v-if="ongoingTrips.length > 0" class="flex flex-col gap-5 flex-grow">
       <h2 class="text-2xl font-bold">Ongoing trips</h2>
       <div class="flex flex-wrap gap-4">
-        <div v-for="(trip, index) in ongoingTrips" :key="index" 
+        <div v-for="(trip, index) in ongoingTrips" :key="trip.id" 
              class="flex flex-col gap-1 bg-white px-4 py-4 rounded-lg border border-gray-300 w-[250px] h-auto relative group transition-all duration-300 ease-out"
              :class="{ 'animate-new-trip': trip.isNew, 'animate-delete-trip': trip.isDeleting }">
           <label class="block text-sm font-regular text-gray-400">{{ formatDateRange(trip.dateRange) }}</label>
           <title class="block text-xl font-medium text-gray-800">{{ trip.name }}</title>
           <label class="block text-sm font-regular text-gray-600">{{ trip.destination }} • {{ trip.category }}</label>
           <div class="w-fill flex items-center justify-end">
-            <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
-              <ArrowRight />
-            </Button>
+            <NuxtLink 
+              :to="`/trip/${trip.id}`" 
+              class="inline-block"
+            >
+              <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
+                <ArrowRight />
+              </Button>
+            </NuxtLink>
             <Button 
               @click="deleteTrip(index)"
               class="absolute top-[-8px] right-[-8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center"
@@ -79,16 +84,21 @@
     <div v-if="upcomingTrips.length > 0" class="flex flex-col gap-5">
       <h2 class="text-2xl font-bold">Upcoming trips</h2>
       <div class="flex flex-wrap gap-4">
-        <div v-for="(trip, index) in upcomingTrips" :key="index" 
+        <div v-for="(trip, index) in upcomingTrips" :key="trip.id" 
              class="flex flex-col gap-1 bg-white px-4 py-4 rounded-lg border border-gray-300 w-[250px] h-auto relative group transition-all duration-300 ease-out"
              :class="{ 'animate-new-trip': trip.isNew, 'animate-delete-trip': trip.isDeleting }">
           <label class="block text-sm font-regular text-gray-400">{{ formatDateRange(trip.dateRange) }}</label>
           <title class="block text-xl font-medium text-gray-800">{{ trip.name }}</title>
           <label class="block text-sm font-regular text-gray-600">{{ trip.destination }} • {{ trip.category }}</label>
           <div class="w-fill flex items-center justify-end">
-            <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
-              <ArrowRight />
-            </Button>
+            <NuxtLink 
+              :to="`/trip/${trip.id}`" 
+              class="inline-block"
+            >
+              <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
+                <ArrowRight />
+              </Button>
+            </NuxtLink>
             <Button 
               @click="deleteTrip(index)"
               class="absolute top-[-8px] right-[-8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center"
@@ -103,16 +113,21 @@
     <div v-if="pastTrips.length > 0" class="flex flex-col gap-5">
       <h2 class="text-2xl font-bold">Past trips</h2>
       <div class="flex flex-wrap gap-4">
-        <div v-for="(trip, index) in pastTrips" :key="index" 
+        <div v-for="(trip, index) in pastTrips" :key="trip.id" 
              class="flex flex-col gap-1 bg-white px-4 py-4 rounded-lg border border-gray-300 w-[250px] h-auto relative group transition-all duration-300 ease-out"
              :class="{ 'animate-new-trip': trip.isNew, 'animate-delete-trip': trip.isDeleting }">
           <label class="block text-sm font-regular text-gray-400">{{ formatDateRange(trip.dateRange) }}</label>
           <title class="block text-xl font-medium text-gray-800">{{ trip.name }}</title>
           <label class="block text-sm font-regular text-gray-600">{{ trip.destination }} • {{ trip.category }}</label>
           <div class="w-fill flex items-center justify-end">
-            <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
-              <ArrowRight />
-            </Button>
+            <NuxtLink 
+              :to="`/trip/${trip.id}`" 
+              class="inline-block"
+            >
+              <Button class="bg-neutral-200 hover:bg-neutral-300 text-gray-800 h-10 w-10 p-0 rounded-full">
+                <ArrowRight />
+              </Button>
+            </NuxtLink>
             <Button 
               @click="deleteTrip(index)"
               class="absolute top-[-8px] right-[-8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center"
@@ -151,6 +166,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { NuxtLink } from '#components'
+import { v4 as uuidv4 } from 'uuid'
 
 // Initialize the date range for the calendar
 // 'start' is set to today's date in the local time zone
@@ -175,7 +192,7 @@ onMounted(() => {
   console.log('Saved trips from localStorage:', savedTrips)
   if (savedTrips && savedTrips !== '""') {
     try {
-      const parsedTrips = JSON.parse(savedTrips, (key, value) => {
+      let parsedTrips = JSON.parse(savedTrips, (key, value) => {
         if (key === 'dateRange' && typeof value === 'object' && value !== null) {
           return {
             start: value.start ? parseDate(value.start) : null,
@@ -184,8 +201,15 @@ onMounted(() => {
         }
         return value
       })
-      trips.value = Array.isArray(parsedTrips) ? parsedTrips : []
+      // Add ids to existing trips if they don't have one
+      parsedTrips = parsedTrips.map(trip => ({
+        ...trip,
+        id: trip.id || uuidv4()
+      }))
+      trips.value = parsedTrips
       console.log('Parsed trips:', trips.value)
+      // Save the updated trips back to localStorage
+      saveTripsToLocalStorage()
     } catch (error) {
       console.error('Error parsing trips from localStorage:', error)
       trips.value = [] // Reset to empty array if parsing fails
@@ -276,6 +300,7 @@ const createTrip = () => {
   }
 
   const newTrip = {
+    id: uuidv4(), // Generate a unique id
     name: tripName.value,
     destination: destination.value,
     category: selectedCategory.value,
