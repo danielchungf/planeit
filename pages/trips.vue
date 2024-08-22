@@ -17,7 +17,13 @@
           <label for="tripName" class="block text-sm font-medium text-gray-700">Name of the trip</label>
           <Input type="text" class="mb-2" placeholder="Trip to Yosemite National Park..." v-model="tripName" />
           <label for="destination" class="block text-sm font-medium text-gray-700">Destination</label>
-          <Input type="text" class="mb-2" placeholder="Peru, Tokyo, Barcelona... " v-model="destination" />
+          <TagsInput v-model="destinationTags">
+            <TagsInputItem v-for="item in destinationTags" :key="item" :value="item">
+              <TagsInputItemText />
+              <TagsInputItemDelete />
+            </TagsInputItem>
+            <TagsInputInput class="placeholder:text-neutral-500" placeholder="Add cities or places separated by commas" />
+          </TagsInput>
           <label for="dates" class="block text-sm font-medium text-gray-700">Date range</label>
           <Popover>
             <PopoverTrigger as-child>
@@ -131,7 +137,9 @@
           <h1 class="text-2xl font-bold">{{ selectedTrip.name }}</h1>
           <div class="flex flex-row gap-2">
             <Badge :class="getCategoryColors(selectedTrip.category)">{{ selectedTrip.category }}</Badge>
-            <Badge class="bg-neutral-100 text-neutral-600 hover:bg-neutral-200">{{ selectedTrip.destination }}</Badge>
+            <Badge v-for="place in selectedTrip.destination" :key="place" class="bg-neutral-100 text-neutral-600 hover:bg-neutral-200">
+              {{ place }}
+            </Badge>
             <Popover v-model:open="isDatePopoverOpen">
               <PopoverTrigger asChild>
                 <Badge class="bg-transparent border-neutral-300 text-neutral-600 hover:bg-transparent cursor-pointer">
@@ -236,6 +244,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 
+/* start City input */
+import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input'
+/* end City input */
+
+
 /* start Date picker */
 import { type Ref, ref, computed, onMounted, watch } from 'vue'
 import {
@@ -265,7 +278,7 @@ const value = ref({
 interface Trip {
   id: string
   name: string
-  destination: string
+  destination: string[]
   startDate: CalendarDate
   endDate: CalendarDate
   category: string
@@ -273,7 +286,7 @@ interface Trip {
 
 // Form input reactive references
 const tripName = ref('')
-const destination = ref('')
+const destinationTags = ref<string[]>([])
 const category = ref('')
 const dateRange = ref({
   start: today(getLocalTimeZone()),
@@ -294,7 +307,7 @@ const isDatePopoverOpen = ref(false)
 // Computed property to check if all fields are filled
 const isFormValid = computed(() => {
   return tripName.value.trim() !== '' &&
-         destination.value.trim() !== '' &&
+         destinationTags.value.length > 0 &&
          category.value !== '' &&
          value.value.start && value.value.end
 })
@@ -304,7 +317,7 @@ function createTrip() {
   const newTrip: Trip = {
     id: generateUniqueId(),
     name: tripName.value,
-    destination: destination.value,
+    destination: destinationTags.value,
     startDate: value.value.start,
     endDate: value.value.end,
     category: category.value,
@@ -461,7 +474,7 @@ function openEditDialog() {
   if (selectedTrip.value) {
     isEditing.value = true
     tripName.value = selectedTrip.value.name
-    destination.value = selectedTrip.value.destination
+    destinationTags.value = selectedTrip.value.destination
     category.value = selectedTrip.value.category
     value.value = {
       start: selectedTrip.value.startDate,
@@ -473,7 +486,7 @@ function openEditDialog() {
 
 function resetForm() {
   tripName.value = ''
-  destination.value = ''
+  destinationTags.value = []
   category.value = ''
   value.value = {
     start: today(getLocalTimeZone()),
@@ -486,7 +499,7 @@ function updateTrip() {
     const updatedTrip: Trip = {
       ...selectedTrip.value,
       name: tripName.value,
-      destination: destination.value,
+      destination: destinationTags.value,
       startDate: value.value.start,
       endDate: value.value.end,
       category: category.value,
