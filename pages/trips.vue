@@ -3,7 +3,7 @@
     <!-- Content for sidebar starts -->
     <div class="w-[250px] bg-neutral-100 h-full border-r border-neutral-200 flex flex-col gap-6 p-5">
       <Dialog v-model:open="isDialogOpen">
-        <DialogTrigger @click="isDialogOpen = true" class="mb-3">
+        <DialogTrigger @click="openCreateDialog" class="mb-3">
           <Button 
           class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 w-full">
           <TicketsPlane />
@@ -12,7 +12,7 @@
         </DialogTrigger>
         <DialogContent class="w-[400px]">
           <DialogHeader class="mb-2">
-            <DialogTitle>Create a new trip</DialogTitle>
+            <DialogTitle>{{ isEditing ? 'Edit trip' : 'Create a new trip' }}</DialogTitle>
           </DialogHeader>
           <label for="tripName" class="block text-sm font-medium text-gray-700">Name of the trip</label>
           <Input type="text" class="mb-2" placeholder="Trip to Yosemite National Park..." v-model="tripName" />
@@ -79,7 +79,9 @@
             </SelectContent>
           </Select>
           <DialogFooter class="mt-2">
-            <Button type="submit" @click="createTrip" :disabled="!isFormValid">Create</Button>
+            <Button type="submit" @click="isEditing ? updateTrip() : createTrip()" :disabled="!isFormValid">
+              {{ isEditing ? 'Update' : 'Create' }}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -91,7 +93,7 @@
                @click="selectTrip(trip)"
                class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
                :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
-            {{ trip.name }}
+            {{ truncateName(trip.name) }}
           </div>
         </div>
 
@@ -101,7 +103,7 @@
                @click="selectTrip(trip)"
                class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
                :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
-            {{ trip.name }}
+            {{ truncateName(trip.name) }}
           </div>
         </div>
 
@@ -111,7 +113,7 @@
                @click="selectTrip(trip)"
                class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
                :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
-            {{ trip.name }}
+            {{ truncateName(trip.name) }}
           </div>
         </div>
 
@@ -124,17 +126,25 @@
 
     <!-- Content for the trip view starts -->
     <div class="flex-1 bg-white">
-      <div v-if="selectedTrip" class="h-[130px] border-b flex flex-row px-6 justify-between pt-5">
-        <div class="flex flex-col gap-2">
+      <div v-if="selectedTrip" class="h-[110px] border-b flex flex-row px-6 justify-between pt-5">
+        <div class="flex flex-col gap-3">
+          <h1 class="text-2xl font-bold">{{ selectedTrip.name }}</h1>
           <div class="flex flex-row gap-2">
             <Badge :class="getCategoryColors(selectedTrip.category)">{{ selectedTrip.category }}</Badge>
-            <Badge class="bg-neutral-200 text-neutral-600 hover:bg-neutral-200">{{ selectedTrip.destination }}</Badge>
+            <Badge class="bg-neutral-100 text-neutral-600 hover:bg-neutral-200">{{ selectedTrip.destination }}</Badge>
+            <Badge class="bg-transparent border-neutral-300 text-neutral-600 hover:bg-transparent">{{ formatDateRange(selectedTrip) }}</Badge>
+            <Badge class="bg-transparent border-neutral-300 text-neutral-600 hover:bg-transparent">{{ calculateDaysAndNights(selectedTrip) }}</Badge>
           </div>
-            <h1 class="text-2xl font-bold">{{ selectedTrip.name }}</h1>
-            <label class="block text-sm font-regular text-gray-600">{{ formatDateRange(selectedTrip) }} • {{ calculateDaysAndNights(selectedTrip) }}</label>
+    
         </div>
-        <div class="flex flex-col justify-start">
-            <AlertDialog>
+        <div class="flex flex-row gap-3 items-start">
+          <Button 
+                @click="openEditDialog"
+                class="cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-transparent border border-gray-300 hover:bg-neutral-100 hover:border-gray-300 group"
+            >
+                <Pencil class="text-gray-600 w-4 h-4 group-hover:text-gray-800 transition-colors duration-200" />
+            </Button>  
+          <AlertDialog>
                 <AlertDialogTrigger>
                     <Button 
                 class="cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-transparent border border-gray-300 hover:bg-red-100 hover:border-red-200 group"
@@ -154,7 +164,7 @@
                     <AlertDialogAction @click="deleteTrip">Delete</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
-            </AlertDialog>
+          </AlertDialog>
         </div>
 
       </div>
@@ -175,6 +185,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { TicketsPlane } from 'lucide-vue-next'
 import { Trash2 } from 'lucide-vue-next'
+import { Pencil } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -258,6 +269,7 @@ const selectedTrip = ref<Trip | null>(null)
 
 // Add this to manage dialog state
 const isDialogOpen = ref(false)
+const isEditing = ref(false)
 
 // Computed property to check if all fields are filled
 const isFormValid = computed(() => {
@@ -290,14 +302,7 @@ function createTrip() {
 
   saveTripsToLocalStorage()
 
-  tripName.value = ''
-  destination.value = ''
-  category.value = ''
-  value.value = {
-    start: today(getLocalTimeZone()),
-    end: today(getLocalTimeZone()).add({ days: 7 }),
-  }
-
+  resetForm()
   isDialogOpen.value = false
   selectedTrip.value = newTrip
 }
@@ -424,6 +429,67 @@ function getCategoryColors(category: string) {
     default:
       return 'bg-rose-100 text-rose-800 hover:bg-rose-200' // for 'Other' or any undefined category
   }
+}
+
+function openCreateDialog() {
+  isEditing.value = false
+  resetForm()
+  isDialogOpen.value = true
+}
+
+function openEditDialog() {
+  if (selectedTrip.value) {
+    isEditing.value = true
+    tripName.value = selectedTrip.value.name
+    destination.value = selectedTrip.value.destination
+    category.value = selectedTrip.value.category
+    value.value = {
+      start: selectedTrip.value.startDate,
+      end: selectedTrip.value.endDate
+    }
+    isDialogOpen.value = true
+  }
+}
+
+function resetForm() {
+  tripName.value = ''
+  destination.value = ''
+  category.value = ''
+  value.value = {
+    start: today(getLocalTimeZone()),
+    end: today(getLocalTimeZone()).add({ days: 7 }),
+  }
+}
+
+function updateTrip() {
+  if (selectedTrip.value) {
+    const updatedTrip: Trip = {
+      ...selectedTrip.value,
+      name: tripName.value,
+      destination: destination.value,
+      startDate: value.value.start,
+      endDate: value.value.end,
+      category: category.value,
+    }
+
+    // Update the trip in the appropriate list
+    const lists = [ongoingTrips, upcomingTrips, pastTrips]
+    lists.forEach(list => {
+      const index = list.value.findIndex(trip => trip.id === updatedTrip.id)
+      if (index !== -1) {
+        list.value[index] = updatedTrip
+      }
+    })
+
+    selectedTrip.value = updatedTrip
+    saveTripsToLocalStorage()
+    isDialogOpen.value = false
+  }
+}
+
+function truncateName(name: string, maxLength: number = 30): string {
+  if (name.length <= maxLength) return name;
+  return name.slice(0, maxLength) + '...';
 }
 
 onMounted(() => {
