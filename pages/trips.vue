@@ -85,32 +85,32 @@
       </Dialog>
       
       <div class="flex flex-col gap-4">
-        <div class="flex flex-col gap-2" v-if="ongoingTrips.length > 0">
-          <h2 class="text-md font-semibold">Ongoing trips</h2>
+        <div class="flex flex-col gap-1" v-if="ongoingTrips.length > 0">
+          <h2 class="text-sm font-semibold mb-1">Ongoing trips</h2>
           <div v-for="trip in ongoingTrips" :key="trip.id" 
                @click="selectTrip(trip)"
                class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
-               :class="{ 'bg-neutral-200': selectedTrip?.id === trip.id }">
+               :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
             {{ trip.name }}
           </div>
         </div>
 
-        <div class="flex flex-col gap-2" v-if="upcomingTrips.length > 0">
-          <h2 class="text-md font-semibold">Upcoming trips</h2>
+        <div class="flex flex-col gap-1" v-if="upcomingTrips.length > 0">
+          <h2 class="text-sm font-semibold mb-1">Upcoming trips</h2>
           <div v-for="trip in upcomingTrips" :key="trip.id" 
                @click="selectTrip(trip)"
                class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
-               :class="{ 'bg-neutral-200': selectedTrip?.id === trip.id }">
+               :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
             {{ trip.name }}
           </div>
         </div>
 
-        <div class="flex flex-col gap-2" v-if="pastTrips.length > 0">
-          <h2 class="text-md font-semibold">Past trips</h2>
+        <div class="flex flex-col gap-1" v-if="pastTrips.length > 0">
+          <h2 class="text-sm font-semibold mb-1">Past trips</h2>
           <div v-for="trip in pastTrips" :key="trip.id" 
                @click="selectTrip(trip)"
                class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
-               :class="{ 'bg-neutral-200': selectedTrip?.id === trip.id }">
+               :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
             {{ trip.name }}
           </div>
         </div>
@@ -122,39 +122,22 @@
     </div>
     <!-- Content for the sidebar ends -->
 
-
+    <!-- Content for the trip view starts -->
     <div class="flex-1 bg-white p-6">
       <div v-if="selectedTrip" class="space-y-4">
         <h1 class="text-2xl font-bold">{{ selectedTrip.name }}</h1>
         <p><strong>Destination:</strong> {{ selectedTrip.destination }}</p>
         <p><strong>Category:</strong> {{ selectedTrip.category }}</p>
         <p><strong>Date Range:</strong> {{ formatDateRange(selectedTrip) }}</p>
-        
-        <!-- Add more sections for trip planning here -->
-        <h2 class="text-xl font-semibold mb-2">Trip Planning</h2>
-        <div class="space-y-4">
-          <div>
-            <h3 class="text-lg font-medium">Accommodation</h3>
-            <!-- Add accommodation planning details -->
-          </div>
-          <div>
-            <h3 class="text-lg font-medium">Transportation</h3>
-            <!-- Add transportation planning details -->
-          </div>
-          <div>
-            <h3 class="text-lg font-medium">Activities</h3>
-            <!-- Add activities planning details -->
-          </div>
-          <div>
-            <h3 class="text-lg font-medium">Packing List</h3>
-            <!-- Add packing list details -->
-          </div>
-        </div>
       </div>
+
       <div v-else class="flex justify-center items-center h-full text-sm font-medium text-neutral-400">
         Create or select a trip to start your planning.
       </div>
+      
     </div>
+    <!-- Content for the trip view ends -->
+
   </div>
 </template>
 
@@ -182,12 +165,13 @@ import {
 } from '@/components/ui/select'
 
 /* start Date picker */
-import { type Ref, ref, computed } from 'vue'
+import { type Ref, ref, computed, onMounted } from 'vue'
 import {
   CalendarDate,
   DateFormatter,
   getLocalTimeZone,
   today,
+  parseDate,
 } from '@internationalized/date'
 
 import { Calendar as CalendarIcon } from 'lucide-vue-next'
@@ -244,7 +228,7 @@ const isFormValid = computed(() => {
 // Function to create and categorize a new trip
 function createTrip() {
   const newTrip: Trip = {
-    id: generateUniqueId(), // Use the custom function instead of uuidv4
+    id: generateUniqueId(),
     name: tripName.value,
     destination: destination.value,
     startDate: value.value.start,
@@ -255,17 +239,15 @@ function createTrip() {
   const now = today(getLocalTimeZone())
 
   if (newTrip.endDate.compare(now) >= 0 && newTrip.startDate.compare(now) <= 0) {
-    // Ongoing trips: when the end date is today or after
     ongoingTrips.value.push(newTrip)
   } else if (newTrip.startDate.compare(now) > 0) {
-    // Upcoming trips: when the start date is after today
     upcomingTrips.value.push(newTrip)
   } else {
-    // Past trips: when the end day is before today
     pastTrips.value.push(newTrip)
   }
 
-  // Reset form fields after trip creation
+  saveTripsToLocalStorage()
+
   tripName.value = ''
   destination.value = ''
   category.value = ''
@@ -274,10 +256,7 @@ function createTrip() {
     end: today(getLocalTimeZone()).add({ days: 7 }),
   }
 
-  // Close the dialog
   isDialogOpen.value = false
-
-  // Automatically select the newly created trip
   selectedTrip.value = newTrip
 }
 
@@ -294,6 +273,72 @@ function formatDateRange(trip: Trip) {
 function generateUniqueId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
+
+function saveTripsToLocalStorage() {
+  const tripsToSave = {
+    ongoing: ongoingTrips.value.map(trip => ({
+      ...trip,
+      startDate: trip.startDate.toString(),
+      endDate: trip.endDate.toString()
+    })),
+    upcoming: upcomingTrips.value.map(trip => ({
+      ...trip,
+      startDate: trip.startDate.toString(),
+      endDate: trip.endDate.toString()
+    })),
+    past: pastTrips.value.map(trip => ({
+      ...trip,
+      startDate: trip.startDate.toString(),
+      endDate: trip.endDate.toString()
+    }))
+  }
+  localStorage.setItem('trips', JSON.stringify(tripsToSave))
+}
+
+function loadTripsFromLocalStorage() {
+  const storedTrips = localStorage.getItem('trips')
+  if (storedTrips) {
+    const parsedTrips = JSON.parse(storedTrips)
+    ongoingTrips.value = parsedTrips.ongoing.map(trip => ({
+      ...trip,
+      startDate: safeParseDateString(trip.startDate),
+      endDate: safeParseDateString(trip.endDate)
+    })) || []
+    upcomingTrips.value = parsedTrips.upcoming.map(trip => ({
+      ...trip,
+      startDate: safeParseDateString(trip.startDate),
+      endDate: safeParseDateString(trip.endDate)
+    })) || []
+    pastTrips.value = parsedTrips.past.map(trip => ({
+      ...trip,
+      startDate: safeParseDateString(trip.startDate),
+      endDate: safeParseDateString(trip.endDate)
+    })) || []
+  }
+}
+
+function safeParseDateString(value: any): CalendarDate {
+  if (value instanceof CalendarDate) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    try {
+      return parseDate(value);
+    } catch (error) {
+      console.error('Error parsing date string:', error);
+      return today(getLocalTimeZone()); // fallback to today's date
+    }
+  }
+  if (value && typeof value === 'object' && 'year' in value && 'month' in value && 'day' in value) {
+    return new CalendarDate(value.year, value.month, value.day);
+  }
+  console.error('Invalid date value:', value);
+  return today(getLocalTimeZone()); // fallback to today's date
+}
+
+onMounted(() => {
+  loadTripsFromLocalStorage()
+})
 </script>
 
 <style scoped>
