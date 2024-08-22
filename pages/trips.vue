@@ -17,12 +17,18 @@
           <label for="tripName" class="block text-sm font-medium text-gray-700">Name of the trip</label>
           <Input type="text" class="mb-2" placeholder="Trip to Yosemite National Park..." v-model="tripName" />
           <label for="destination" class="block text-sm font-medium text-gray-700">Destination</label>
-          <TagsInput v-model="destinationTags">
-            <TagsInputItem v-for="item in destinationTags" :key="item" :value="item">
+          <TagsInput 
+            v-model="currentDestinationTags"
+          >
+            <TagsInputItem v-for="item in currentDestinationTags" :key="item" :value="item">
               <TagsInputItemText />
               <TagsInputItemDelete />
             </TagsInputItem>
-            <TagsInputInput class="placeholder:text-neutral-500" placeholder="Add cities or places separated by commas" />
+            <TagsInputInput 
+              v-model="currentInputValue"
+              class="placeholder:text-neutral-500" 
+              :placeholder="currentDestinationTags.length === 0 ? 'Add cities or places separated by commas' : ''" 
+            />
           </TagsInput>
           <label for="dates" class="block text-sm font-medium text-gray-700">Date range</label>
           <Popover>
@@ -287,6 +293,7 @@ interface Trip {
 // Form input reactive references
 const tripName = ref('')
 const destinationTags = ref<string[]>([])
+const inputValue = ref('')
 const category = ref('')
 const dateRange = ref({
   start: today(getLocalTimeZone()),
@@ -307,7 +314,6 @@ const isDatePopoverOpen = ref(false)
 // Computed property to check if all fields are filled
 const isFormValid = computed(() => {
   return tripName.value.trim() !== '' &&
-         destinationTags.value.length > 0 &&
          category.value !== '' &&
          value.value.start && value.value.end
 })
@@ -317,7 +323,7 @@ function createTrip() {
   const newTrip: Trip = {
     id: generateUniqueId(),
     name: tripName.value,
-    destination: destinationTags.value,
+    destination: destinationValue.value,
     startDate: value.value.start,
     endDate: value.value.end,
     category: category.value,
@@ -474,7 +480,8 @@ function openEditDialog() {
   if (selectedTrip.value) {
     isEditing.value = true
     tripName.value = selectedTrip.value.name
-    destinationTags.value = selectedTrip.value.destination
+    tempDestinationTags.value = [...selectedTrip.value.destination]
+    tempInputValue.value = ''
     category.value = selectedTrip.value.category
     value.value = {
       start: selectedTrip.value.startDate,
@@ -487,11 +494,15 @@ function openEditDialog() {
 function resetForm() {
   tripName.value = ''
   destinationTags.value = []
+  inputValue.value = ''
+  tempDestinationTags.value = []
+  tempInputValue.value = ''
   category.value = ''
   value.value = {
     start: today(getLocalTimeZone()),
     end: today(getLocalTimeZone()).add({ days: 7 }),
   }
+  isEditing.value = false
 }
 
 function updateTrip() {
@@ -499,7 +510,7 @@ function updateTrip() {
     const updatedTrip: Trip = {
       ...selectedTrip.value,
       name: tripName.value,
-      destination: destinationTags.value,
+      destination: destinationValue.value,
       startDate: value.value.start,
       endDate: value.value.end,
       category: category.value,
@@ -517,6 +528,7 @@ function updateTrip() {
     selectedTrip.value = updatedTrip
     saveTripsToLocalStorage()
     isDialogOpen.value = false
+    isEditing.value = false
   }
 }
 
@@ -573,6 +585,44 @@ function saveDateRangeAndClose() {
   saveDateRange()
   closePopover()
 }
+
+const tempDestinationTags = ref<string[]>([])
+const tempInputValue = ref('')
+
+const currentInputValue = computed({
+  get() {
+    return isEditing.value ? tempInputValue.value : inputValue.value
+  },
+  set(newValue) {
+    if (isEditing.value) {
+      tempInputValue.value = newValue
+    } else {
+      inputValue.value = newValue
+    }
+  }
+})
+
+const currentDestinationTags = computed({
+  get() {
+    return isEditing.value ? tempDestinationTags.value : destinationTags.value
+  },
+  set(newValue) {
+    if (isEditing.value) {
+      tempDestinationTags.value = newValue
+    } else {
+      destinationTags.value = newValue
+    }
+  }
+})
+
+const destinationValue = computed(() => {
+  const allValues = isEditing.value ? [...tempDestinationTags.value] : [...destinationTags.value]
+  const inputToCheck = isEditing.value ? tempInputValue.value : inputValue.value
+  if (inputToCheck.trim()) {
+    allValues.push(inputToCheck.trim())
+  }
+  return allValues
+})
 
 onMounted(() => {
   loadTripsFromLocalStorage()
