@@ -1,9 +1,9 @@
 <template>
   <div class="flex h-screen">
-    <!-- Content for the left div -->
-    <div class="w-[250px] bg-neutral-100 h-full border-r border-neutral-200 flex flex-col gap-6 p-4">
+    <!-- Content for sidebar starts -->
+    <div class="w-[250px] bg-neutral-100 h-full border-r border-neutral-200 flex flex-col gap-6 p-5">
       <Dialog v-model:open="isDialogOpen">
-        <DialogTrigger @click="isDialogOpen = true" class="mb-5">
+        <DialogTrigger @click="isDialogOpen = true" class="mb-3">
           <Button 
           class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 w-full">
           <TicketsPlane />
@@ -85,23 +85,32 @@
       </Dialog>
       
       <div class="flex flex-col gap-4">
-        <div v-if="ongoingTrips.length > 0">
-          <h2 class="text-lg font-semibold">Ongoing trips</h2>
-          <div v-for="trip in ongoingTrips" :key="trip.id" class="text-sm">
+        <div class="flex flex-col gap-2" v-if="ongoingTrips.length > 0">
+          <h2 class="text-md font-semibold">Ongoing trips</h2>
+          <div v-for="trip in ongoingTrips" :key="trip.id" 
+               @click="selectTrip(trip)"
+               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
+               :class="{ 'bg-neutral-200': selectedTrip?.id === trip.id }">
             {{ trip.name }}
           </div>
         </div>
 
-        <div v-if="upcomingTrips.length > 0">
-          <h2 class="text-lg font-semibold">Upcoming trips</h2>
-          <div v-for="trip in upcomingTrips" :key="trip.id" class="text-sm">
+        <div class="flex flex-col gap-2" v-if="upcomingTrips.length > 0">
+          <h2 class="text-md font-semibold">Upcoming trips</h2>
+          <div v-for="trip in upcomingTrips" :key="trip.id" 
+               @click="selectTrip(trip)"
+               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
+               :class="{ 'bg-neutral-200': selectedTrip?.id === trip.id }">
             {{ trip.name }}
           </div>
         </div>
 
-        <div v-if="pastTrips.length > 0">
-          <h2 class="text-lg font-semibold">Past trips</h2>
-          <div v-for="trip in pastTrips" :key="trip.id" class="text-sm">
+        <div class="flex flex-col gap-2" v-if="pastTrips.length > 0">
+          <h2 class="text-md font-semibold">Past trips</h2>
+          <div v-for="trip in pastTrips" :key="trip.id" 
+               @click="selectTrip(trip)"
+               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
+               :class="{ 'bg-neutral-200': selectedTrip?.id === trip.id }">
             {{ trip.name }}
           </div>
         </div>
@@ -111,9 +120,40 @@
         </div>
       </div>
     </div>
+    <!-- Content for the sidebar ends -->
 
-    <div class="flex-1 bg-white">
-      <!-- Content for the right div -->
+
+    <div class="flex-1 bg-white p-6">
+      <div v-if="selectedTrip" class="space-y-4">
+        <h1 class="text-2xl font-bold">{{ selectedTrip.name }}</h1>
+        <p><strong>Destination:</strong> {{ selectedTrip.destination }}</p>
+        <p><strong>Category:</strong> {{ selectedTrip.category }}</p>
+        <p><strong>Date Range:</strong> {{ formatDateRange(selectedTrip) }}</p>
+        
+        <!-- Add more sections for trip planning here -->
+        <h2 class="text-xl font-semibold mb-2">Trip Planning</h2>
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-lg font-medium">Accommodation</h3>
+            <!-- Add accommodation planning details -->
+          </div>
+          <div>
+            <h3 class="text-lg font-medium">Transportation</h3>
+            <!-- Add transportation planning details -->
+          </div>
+          <div>
+            <h3 class="text-lg font-medium">Activities</h3>
+            <!-- Add activities planning details -->
+          </div>
+          <div>
+            <h3 class="text-lg font-medium">Packing List</h3>
+            <!-- Add packing list details -->
+          </div>
+        </div>
+      </div>
+      <div v-else class="flex justify-center items-center h-full text-sm font-medium text-neutral-400">
+        Create or select a trip to start your planning.
+      </div>
     </div>
   </div>
 </template>
@@ -167,6 +207,7 @@ const value = ref({
 /* end Date picker */
 
 interface Trip {
+  id: string
   name: string
   destination: string
   startDate: CalendarDate
@@ -187,6 +228,7 @@ const dateRange = ref({
 const ongoingTrips = ref<Trip[]>([])
 const upcomingTrips = ref<Trip[]>([])
 const pastTrips = ref<Trip[]>([])
+const selectedTrip = ref<Trip | null>(null)
 
 // Add this to manage dialog state
 const isDialogOpen = ref(false)
@@ -202,6 +244,7 @@ const isFormValid = computed(() => {
 // Function to create and categorize a new trip
 function createTrip() {
   const newTrip: Trip = {
+    id: generateUniqueId(), // Use the custom function instead of uuidv4
     name: tripName.value,
     destination: destination.value,
     startDate: value.value.start,
@@ -233,6 +276,23 @@ function createTrip() {
 
   // Close the dialog
   isDialogOpen.value = false
+
+  // Automatically select the newly created trip
+  selectedTrip.value = newTrip
+}
+
+function selectTrip(trip: Trip) {
+  selectedTrip.value = trip
+}
+
+function formatDateRange(trip: Trip) {
+  const start = new Date(trip.startDate.toString())
+  const end = new Date(trip.endDate.toString())
+  return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+}
+
+function generateUniqueId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 </script>
 
