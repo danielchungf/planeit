@@ -56,7 +56,7 @@
               </Button>
             </PopoverTrigger>
             <PopoverContent class="w-auto p-0">
-              <RangeCalendar v-model="value" initial-focus :number-of-months="2" @update:start-value="(startDate) => value.start = startDate" />
+              <RangeCalendar v-model="value" initial-focus :number-of-months="1" @update:start-value="(startDate) => value.start = startDate" />
             </PopoverContent>
           </Popover>
           <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
@@ -157,7 +157,7 @@
                 <RangeCalendar 
                   v-model="editDateRange" 
                   :initial-focus="true"
-                  :number-of-months="2"
+                  :number-of-months="1"
                   @update:start-value="updateStartDate"
                   @update:end-value="updateEndDate"
                 />
@@ -201,12 +201,22 @@
           </AlertDialog>
         </div>
         </div>
-        <div class="h-[calc(100vh-110px)] flex flex-col gap-3 px-6 p-5 overflow-y-auto">
-          <div v-if="selectedTrip" class="flex flex-col gap-4">
-            <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center border border-neutral-200">
-              <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
-              <!-- You can add more content for each day here -->
-            </div>
+        <div class="h-[calc(100vh-110px)] flex flex-col gap-3 pb-5 overflow-y-auto">
+          <div v-if="selectedTrip" class="">
+            <ResizablePanelGroup direction="horizontal" class="">
+              <ResizablePanel class="flex flex-col gap-5 pt-5 pl-6" :default-size="60">
+                <Button 
+                  class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 w-[125px]">
+                  <Plus />
+                  <span class="pl-2">Add plans</span>
+                </Button>                
+                <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center border border-neutral-200">
+                  <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
+                </div>
+              </ResizablePanel>
+              <ResizableHandle with-handle class="ml-5" />
+              <ResizablePanel class="pt-5 pr-6 pl-5 bg-neutral-100 text-md font-semibold" :default-size="40">Packing list</ResizablePanel>
+            </ResizablePanelGroup>
           </div>
         </div>
       </div>
@@ -228,6 +238,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { TicketsPlane } from 'lucide-vue-next'
+import { Plus } from 'lucide-vue-next';
 import { Trash2 } from 'lucide-vue-next'
 import { Pencil } from 'lucide-vue-next'
 import {
@@ -260,6 +271,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable'
 
 /* start City input */
 import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input'
