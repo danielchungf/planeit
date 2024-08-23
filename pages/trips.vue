@@ -204,10 +204,10 @@
         <div class="h-[calc(100vh-110px)] flex flex-col gap-3 pb-5 overflow-y-auto">
           <div v-if="selectedTrip" class="">
             <ResizablePanelGroup direction="horizontal" class="">
-              <ResizablePanel class="flex flex-col gap-5 pt-5 pl-6" :default-size="60">
+              <ResizablePanel class="flex flex-col gap-5 pt-5 pl-6" :default-size="80">
                 <Button 
                   class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 w-[125px]">
-                  <Plus />
+                  <Plus class="app" :stroke-width="3" />
                   <span class="pl-2">Add plans</span>
                 </Button>                
                 <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center border border-neutral-200">
@@ -215,7 +215,52 @@
                 </div>
               </ResizablePanel>
               <ResizableHandle with-handle class="ml-5" />
-              <ResizablePanel class="pt-5 pr-6 pl-5 bg-neutral-100 text-md font-semibold" :default-size="40">Packing list</ResizablePanel>
+              <ResizablePanel class="pt-5 pr-6 pl-5 bg-neutral-100 text-md font-semibold" :default-size="20">
+                <div class="flex flex-col gap-4">
+                  <!-- Packing list starts -->
+                  <div class="flex flex-col gap-2">
+                    <h3 class="text-md font-semibold">Packing list</h3>
+                    <div class="flex flex-row gap-2 items-center">
+                      <Input 
+                        v-model="newPackingItem" 
+                        placeholder="Add item to pack..." 
+                        class="flex-grow placeholder:text-neutral-500 placeholder:font-normal font-normal"
+                        @keyup.enter="addPackingItem"
+                      />
+                      <Button @click="addPackingItem">
+                        <Backpack />
+                      </Button>
+                      </div>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    <div 
+                      v-for="item in packingList" 
+                      :key="item.id" 
+                      class="flex flex-row gap-2 items-center group h-[30px]"
+                    >
+                      <Checkbox 
+                        :checked="item.packed"
+                        @update:checked="togglePackedStatus(item.id)" 
+                      />
+                      <span 
+                        :class="{'line-through': item.packed}" 
+                        class="text-sm font-normal flex-grow transition-all duration-200"
+                      >
+                        {{ item.name }}
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        @click="removePackingItem(item.id)" 
+                        class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 class="h-4 w-4 text-neutral-400" />
+                      </Button>
+                    </div>
+                  </div>
+                  <!-- Packing list ends -->
+                </div>
+              </ResizablePanel>
             </ResizablePanelGroup>
           </div>
         </div>
@@ -235,9 +280,11 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { TicketsPlane } from 'lucide-vue-next'
+import { Backpack } from 'lucide-vue-next';
 import { Plus } from 'lucide-vue-next';
 import { Trash2 } from 'lucide-vue-next'
 import { Pencil } from 'lucide-vue-next'
@@ -683,6 +730,28 @@ function formatDayLabel(date: Date, index: number): string {
   const dayOfWeek = format(date, 'EEEE')
   const formattedDate = format(date, 'MMM d')
   return `Day ${dayNumber}, ${dayOfWeek} – ${formattedDate}`
+}
+
+const newPackingItem = ref('')
+const packingList = ref([])
+
+function addPackingItem() {
+  if (newPackingItem.value.trim()) {
+    packingList.value = [...packingList.value, { id: Date.now(), name: newPackingItem.value.trim(), packed: false }]
+    newPackingItem.value = ''
+  }
+}
+
+function removePackingItem(id: number) {
+  packingList.value = packingList.value.filter(item => item.id !== id)
+}
+
+function togglePackedStatus(id: number) {
+  const item = packingList.value.find(item => item.id === id)
+  if (item) {
+    item.packed = !item.packed
+    packingList.value = [...packingList.value]
+  }
 }
 
 onMounted(() => {
