@@ -138,7 +138,8 @@
 
     <!-- Content for the trip view starts -->
     <div class="flex-1 bg-white">
-      <div v-if="selectedTrip" class="h-[110px] border-b flex flex-row px-6 justify-between pt-5">
+      <div v-if="selectedTrip">
+        <div class="h-[110px] border-b flex flex-row px-6 justify-between pt-5">
         <div class="flex flex-col gap-3">
           <h1 class="text-2xl font-bold">{{ selectedTrip.name }}</h1>
           <div class="flex flex-row gap-2">
@@ -199,8 +200,18 @@
                 </AlertDialogContent>
           </AlertDialog>
         </div>
-
+        </div>
+        <div class="h-[calc(100vh-110px)] flex flex-col gap-3 px-6 p-5 overflow-y-auto">
+          <div v-if="selectedTrip" class="flex flex-col gap-4">
+            <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center border border-neutral-200">
+              <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
+              <!-- You can add more content for each day here -->
+            </div>
+          </div>
+        </div>
       </div>
+
+      
 
       <div v-else class="flex justify-center items-center h-full text-sm font-medium text-neutral-400">
         Create or select a trip to start your planning.
@@ -353,12 +364,18 @@ function selectTrip(trip: Trip) {
 function formatDateRange(trip: Trip) {
   const start = new Date(trip.startDate.toString())
   const end = new Date(trip.endDate.toString())
+  // Add one day to both start and end dates
+  start.setDate(start.getDate() + 1)
+  end.setDate(end.getDate() + 1)
   return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
 }
 
 function calculateDaysAndNights(trip: Trip) {
   const start = new Date(trip.startDate.toString())
   const end = new Date(trip.endDate.toString())
+  // Add one day to both start and end dates
+  start.setDate(start.getDate() + 1)
+  end.setDate(end.getDate() + 1)
   const diffTime = Math.abs(end.getTime() - start.getTime())
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   const days = diffDays
@@ -561,8 +578,9 @@ function updateEndDate(date) {
 
 function saveDateRange() {
   if (selectedTrip.value && editDateRange.value.start && editDateRange.value.end) {
-    selectedTrip.value.startDate = editDateRange.value.start
-    selectedTrip.value.endDate = editDateRange.value.end
+    // Subtract one day from both start and end dates before saving
+    selectedTrip.value.startDate = editDateRange.value.start.subtract({ days: 1 })
+    selectedTrip.value.endDate = editDateRange.value.end.subtract({ days: 1 })
 
     // Update the trip in the appropriate list
     const lists = [ongoingTrips, upcomingTrips, pastTrips]
@@ -623,6 +641,32 @@ const destinationValue = computed(() => {
   }
   return allValues
 })
+
+import { addDays, format } from 'date-fns'
+
+const tripDays = computed(() => {
+  if (!selectedTrip.value) return []
+
+  const start = new Date(selectedTrip.value.startDate.toString())
+  const end = new Date(selectedTrip.value.endDate.toString())
+  start.setDate(start.getDate() + 1) // Adjust for the off-by-one issue
+  end.setDate(end.getDate() + 1) // Adjust for the off-by-one issue
+
+  const days = []
+  let currentDay = start
+  while (currentDay <= end) {
+    days.push(new Date(currentDay))
+    currentDay = addDays(currentDay, 1)
+  }
+  return days
+})
+
+function formatDayLabel(date: Date, index: number): string {
+  const dayNumber = index + 1
+  const dayOfWeek = format(date, 'EEEE')
+  const formattedDate = format(date, 'MMM d')
+  return `Day ${dayNumber}, ${dayOfWeek} – ${formattedDate}`
+}
 
 onMounted(() => {
   loadTripsFromLocalStorage()
