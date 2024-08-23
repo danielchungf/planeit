@@ -148,7 +148,7 @@
               {{ place }}
             </Badge>
             <Popover v-model:open="isDatePopoverOpen">
-              <PopoverTrigger asChild>
+              <PopoverTrigger as-child>
                 <Badge class="bg-transparent border-neutral-300 text-neutral-600 hover:bg-transparent cursor-pointer">
                   {{ formatDateRange(selectedTrip) }}
                 </Badge>
@@ -204,18 +204,54 @@
         <div class="h-[calc(100vh-110px)] flex flex-col gap-3 pb-5 overflow-y-auto">
           <div v-if="selectedTrip" class="">
             <ResizablePanelGroup direction="horizontal" class="">
-              <ResizablePanel class="flex flex-col gap-5 pt-5 pl-6" :default-size="80">
-                <Button 
-                  class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 w-[125px]">
-                  <Plus class="app" :stroke-width="3" />
-                  <span class="pl-2">Add plans</span>
-                </Button>                
-                <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center border border-neutral-200">
+              <ResizablePanel class="flex flex-col gap-5 pt-5 pl-6" :default-size="70">
+                <div class="flex flex-row gap-2">
+                  <Button 
+                    class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row">
+                    <Plus class="app" :stroke-width="3" />
+                    <span class="pl-2">Add plans</span>
+                  </Button>
+                  <!-- <Button 
+                  variant="outline" 
+                  class="flex flex-row"
+                  >
+                  <Eraser />
+                  <span class="pl-2">Erase default plans</span>
+                </Button> -->
+                </div>
+                <div class="flex flex-col gap-2">
+                  <div class="flex flex-row gap-2 items-center group">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger as-child>
+                          <BedDouble class="text-sky-600" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Accomodation</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <label class="text-sm font-medium">Hotel Paris</label>
+                    <div class="flex flex-row gap-2 items-center group">
+                      <Button 
+                        class="cursor-pointer rounded-full w-4 h-4 p-0 flex items-center justify-center border-none hover:bg-transparent bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      >
+                        <Pencil class="text-gray-400 w-4 h-4 hover:text-gray-600 transition-colors duration-200" />
+                      </Button>
+                    </div>
+                </div>  
+              </div>           
+                <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center justify-between border border-neutral-200 group">
                   <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
+                  <Button 
+                    class="cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-transparent border border-gray-300 hover:bg-neutral-100 hover:border-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  >
+                    <Eraser class="text-gray-600 w-4 h-4 group-hover:text-gray-800 transition-colors duration-200" />
+                  </Button>
                 </div>
               </ResizablePanel>
               <ResizableHandle with-handle class="ml-5" />
-              <ResizablePanel class="pt-5 pr-6 pl-5 bg-neutral-100 text-md font-semibold" :default-size="20">
+              <ResizablePanel class="pt-5 pr-6 pl-5 bg-neutral-100 text-md font-semibold" :default-size="30">
                 <div class="flex flex-col gap-4">
                   <!-- Packing list starts -->
                   <div class="flex flex-col gap-2">
@@ -232,11 +268,11 @@
                       </Button>
                       </div>
                   </div>
-                  <div class="flex flex-col gap-1">
+                  <div class="flex flex-col gap-0.5">
                     <div 
                       v-for="item in packingList" 
                       :key="item.id" 
-                      class="flex flex-row gap-2 items-center group h-[30px]"
+                      class="flex flex-row gap-2 items-center group py-0.5"
                     >
                       <Checkbox 
                         :checked="item.packed"
@@ -286,8 +322,11 @@ import { Badge } from '@/components/ui/badge'
 import { TicketsPlane } from 'lucide-vue-next'
 import { Backpack } from 'lucide-vue-next';
 import { Plus } from 'lucide-vue-next';
+import { Eraser } from 'lucide-vue-next';
+import { BedDouble } from 'lucide-vue-next';
 import { Trash2 } from 'lucide-vue-next'
 import { Pencil } from 'lucide-vue-next'
+
 import {
   Dialog,
   DialogContent,
@@ -297,6 +336,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+
 import {
   Select,
   SelectContent,
@@ -324,6 +364,13 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable'
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip'
 
 /* start City input */
 import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input'
