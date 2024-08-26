@@ -218,29 +218,9 @@
                   <Eraser />
                   <span class="pl-2">Erase default plans</span>
                 </Button> -->
-                </div>
-                <div class="flex flex-col gap-2">
-                  <div class="flex flex-row gap-2 items-center group">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger as-child>
-                          <BedDouble class="text-sky-600" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Accomodation</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <label class="text-sm font-medium">Hotel Paris</label>
-                    <div class="flex flex-row gap-2 items-center group">
-                      <Button 
-                        class="cursor-pointer rounded-full w-4 h-4 p-0 flex items-center justify-center border-none hover:bg-transparent bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                      >
-                        <Pencil class="text-gray-400 w-4 h-4 hover:text-gray-600 transition-colors duration-200" />
-                      </Button>
-                    </div>
-                </div>  
-              </div>           
+               
+                  
+                </div>           
                 <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center justify-between border border-neutral-200 group">
                   <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
                   <Button 
@@ -251,8 +231,22 @@
                 </div>
               </ResizablePanel>
               <ResizableHandle with-handle class="ml-5" />
-              <ResizablePanel class="pt-5 pr-6 pl-5 bg-neutral-100 text-md font-semibold" :default-size="30">
-                <div class="flex flex-col gap-4">
+              <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold" :default-size="30">
+
+                <Tabs default-value="account" class="w-full">
+                  <TabsList>
+                    <TabsTrigger value="Packing">
+                      Packing
+                    </TabsTrigger>
+                    <TabsTrigger value="Accomodation">
+                      Accomodation
+                    </TabsTrigger>
+                    <TabsTrigger value="Saved">
+                      Saved
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="Packing">
+
                   <!-- Packing list starts -->
                   <div class="flex flex-col gap-2">
                     <h3 class="text-md font-semibold">Packing list</h3>
@@ -260,13 +254,13 @@
                       <Input 
                         v-model="newPackingItem" 
                         placeholder="Add item to pack..." 
-                        class="flex-grow placeholder:text-neutral-500 placeholder:font-normal font-normal"
+                        class="flex-1 placeholder:text-neutral-500 placeholder:font-normal font-normal"
                         @keyup.enter="addPackingItem"
                       />
-                      <Button @click="addPackingItem">
+                      <Button @click="addPackingItem" class="flex-none">
                         <Backpack />
                       </Button>
-                      </div>
+                    </div>
                   </div>
                   <div class="flex flex-col gap-0.5">
                     <div 
@@ -295,7 +289,40 @@
                     </div>
                   </div>
                   <!-- Packing list ends -->
-                </div>
+
+                  </TabsContent>
+                  <TabsContent value="Accomodation">
+                    <!-- Accomodation starts -->
+                    <div class="flex flex-row gap-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger as-child class="">
+                            <BedDouble class="text-sky-600" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Accomodation</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <div class="flex flex-col gap-1 group">
+                        <div class="flex flex-row gap-2 items-center">
+                        <label for="accomodation" class="text-sm font-medium mt-0.5">Hotel Paris</label>
+                          <div class="flex flex-row gap-2 items-center group">
+                            <Button 
+                              class="cursor-pointer rounded-full w-4 h-4 p-0 flex items-center justify-center border-none hover:bg-transparent bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            >
+                              <Pencil class="text-gray-400 w-4 h-4 hover:text-gray-600 transition-colors duration-200" />
+                            </Button>
+                          </div>
+                        </div>
+                        <label for="address" class="text-sm font-normal">1831 Lamont St, San Francisco, CA</label>
+                        <label for="comments"class="text-sm font-normal">Camila already paid for this.</label>
+                      </div>  
+                    </div>
+                    <!-- Accomodation ends -->                 
+                </TabsContent>
+                </Tabs>
+              
               </ResizablePanel>
             </ResizablePanelGroup>
           </div>
@@ -371,6 +398,18 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
+
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarTrigger,
+} from '@/components/ui/menubar'
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 /* start City input */
 import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input'
@@ -473,20 +512,16 @@ function selectTrip(trip: Trip) {
 }
 
 function formatDateRange(trip: Trip) {
-  const start = new Date(trip.startDate.toString())
-  const end = new Date(trip.endDate.toString())
-  // Add one day to both start and end dates
-  start.setDate(start.getDate() + 1)
-  end.setDate(end.getDate() + 1)
+  console.log('Formatting start date:', trip.startDate.toString())
+  console.log('Formatting end date:', trip.endDate.toString())
+  const start = trip.startDate.toDate(getLocalTimeZone())
+  const end = trip.endDate.toDate(getLocalTimeZone())
   return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
 }
 
 function calculateDaysAndNights(trip: Trip) {
-  const start = new Date(trip.startDate.toString())
-  const end = new Date(trip.endDate.toString())
-  // Add one day to both start and end dates
-  start.setDate(start.getDate() + 1)
-  end.setDate(end.getDate() + 1)
+  const start = trip.startDate.toDate(getLocalTimeZone())
+  const end = trip.endDate.toDate(getLocalTimeZone())
   const diffTime = Math.abs(end.getTime() - start.getTime())
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   const days = diffDays
@@ -680,18 +715,21 @@ watch(() => selectedTrip.value, (newTrip) => {
 }, { immediate: true })
 
 function updateStartDate(date) {
+  console.log('Start date updated:', date.toString())
   editDateRange.value.start = date
 }
 
 function updateEndDate(date) {
+  console.log('End date updated:', date.toString())
   editDateRange.value.end = date
 }
 
 function saveDateRange() {
   if (selectedTrip.value && editDateRange.value.start && editDateRange.value.end) {
-    // Subtract one day from both start and end dates before saving
-    selectedTrip.value.startDate = editDateRange.value.start.subtract({ days: 1 })
-    selectedTrip.value.endDate = editDateRange.value.end.subtract({ days: 1 })
+    console.log('Saving start date:', editDateRange.value.start.toString())
+    console.log('Saving end date:', editDateRange.value.end.toString())
+    selectedTrip.value.startDate = editDateRange.value.start
+    selectedTrip.value.endDate = editDateRange.value.end
 
     // Update the trip in the appropriate list
     const lists = [ongoingTrips, upcomingTrips, pastTrips]
@@ -758,10 +796,8 @@ import { addDays, format } from 'date-fns'
 const tripDays = computed(() => {
   if (!selectedTrip.value) return []
 
-  const start = new Date(selectedTrip.value.startDate.toString())
-  const end = new Date(selectedTrip.value.endDate.toString())
-  start.setDate(start.getDate() + 1) // Adjust for the off-by-one issue
-  end.setDate(end.getDate() + 1) // Adjust for the off-by-one issue
+  const start = selectedTrip.value.startDate.toDate(getLocalTimeZone())
+  const end = selectedTrip.value.endDate.toDate(getLocalTimeZone())
 
   const days = []
   let currentDay = start
