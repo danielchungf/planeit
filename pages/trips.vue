@@ -233,22 +233,22 @@
               <ResizableHandle with-handle class="ml-5" />
               <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold" :default-size="30">
 
-                <Tabs default-value="account" class="w-full">
+                <Tabs default-value="Packing">
                   <TabsList>
-                    <TabsTrigger value="Packing">
+                    <TabsTrigger value="Packing" class="flex-1">
                       Packing
                     </TabsTrigger>
-                    <TabsTrigger value="Accomodation">
+                    <TabsTrigger value="Accomodation" class="flex-1">
                       Accomodation
                     </TabsTrigger>
-                    <TabsTrigger value="Saved">
+                    <TabsTrigger value="Saved" class="flex-1">
                       Saved
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="Packing">
 
                   <!-- Packing list starts -->
-                  <div class="flex flex-col gap-2">
+                  <div class="flex flex-col gap-3 mt-5">
                     <h3 class="text-md font-semibold">Packing list</h3>
                     <div class="flex flex-row gap-2 items-center">
                       <Input 
@@ -262,11 +262,11 @@
                       </Button>
                     </div>
                   </div>
-                  <div class="flex flex-col gap-0.5">
+                  <div class="flex flex-col mt-3">
                     <div 
                       v-for="item in packingList" 
                       :key="item.id" 
-                      class="flex flex-row gap-2 items-center group py-0.5"
+                      class="flex flex-row gap-2 items-center group h-[30px]"
                     >
                       <Checkbox 
                         :checked="item.packed"
@@ -293,7 +293,7 @@
                   </TabsContent>
                   <TabsContent value="Accomodation">
                     <!-- Accomodation starts -->
-                    <div class="flex flex-row gap-2">
+                    <div class="flex flex-row gap-2 mt-5">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger as-child class="">
