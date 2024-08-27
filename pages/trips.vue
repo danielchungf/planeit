@@ -14,8 +14,6 @@
           <DialogHeader class="mb-2">
             <DialogTitle>{{ isEditing ? 'Edit trip' : 'Create a new trip' }}</DialogTitle>
           </DialogHeader>
-          <label for="tripName" class="block text-sm font-medium text-gray-700">Name of the trip</label>
-          <Input type="text" class="mb-2" placeholder="Trip to Yosemite National Park..." v-model="tripName" />
           <label for="destination" class="block text-sm font-medium text-gray-700">Destination</label>
           <TagsInput 
             v-model="currentDestinationTags"
@@ -103,9 +101,9 @@
           <h2 class="text-sm font-semibold mb-1">Ongoing trips</h2>
           <div v-for="trip in ongoingTrips" :key="trip.id" 
                @click="selectTrip(trip)"
-               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
+               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded overflow-hidden whitespace-nowrap text-ellipsis"
                :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
-            {{ truncateName(trip.name) }}
+            {{ trip.name }}
           </div>
         </div>
 
@@ -113,9 +111,9 @@
           <h2 class="text-sm font-semibold mb-1">Upcoming trips</h2>
           <div v-for="trip in upcomingTrips" :key="trip.id" 
                @click="selectTrip(trip)"
-               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
+               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded overflow-hidden whitespace-nowrap text-ellipsis"
                :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
-            {{ truncateName(trip.name) }}
+            {{ trip.name }}
           </div>
         </div>
 
@@ -123,9 +121,9 @@
           <h2 class="text-sm font-semibold mb-1">Past trips</h2>
           <div v-for="trip in pastTrips" :key="trip.id" 
                @click="selectTrip(trip)"
-               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded"
+               class="text-sm font-medium text-neutral-500 cursor-pointer hover:bg-neutral-200 p-2 rounded overflow-hidden whitespace-nowrap text-ellipsis"
                :class="{ 'bg-neutral-200 text-neutral-700': selectedTrip?.id === trip.id }">
-            {{ truncateName(trip.name) }}
+            {{ trip.name }}
           </div>
         </div>
 
@@ -239,25 +237,28 @@
                       Packing
                     </TabsTrigger>
                     <TabsTrigger value="Accomodation" class="flex-1">
-                      Accomodation
+                      Accommodation
+                    </TabsTrigger>
+                    <TabsTrigger value="Places" class="flex-1">
+                      Places
                     </TabsTrigger>
                     <TabsTrigger value="Saved" class="flex-1">
-                      Saved
+                      Budget
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="Packing">
 
                   <!-- Packing list starts -->
-                  <div class="flex flex-col gap-3 mt-5">
+                  <div class="flex flex-col gap-2 w-full">
                     <h3 class="text-md font-semibold">Packing list</h3>
-                    <div class="flex flex-row gap-2 items-center">
+                    <div class="grid grid-cols-[1fr,auto] gap-2 items-center w-full">
                       <Input 
                         v-model="newPackingItem" 
                         placeholder="Add item to pack..." 
-                        class="flex-1 placeholder:text-neutral-500 placeholder:font-normal font-normal"
+                        class="w-full min-w-0 placeholder:text-neutral-500 placeholder:font-normal font-normal"
                         @keyup.enter="addPackingItem"
                       />
-                      <Button @click="addPackingItem" class="flex-none">
+                      <Button @click="addPackingItem" class="whitespace-nowrap">
                         <Backpack />
                       </Button>
                     </div>
@@ -452,7 +453,6 @@ interface Trip {
 }
 
 // Form input reactive references
-const tripName = ref('')
 const destinationTags = ref<string[]>([])
 const inputValue = ref('')
 const category = ref('')
@@ -474,17 +474,27 @@ const isDatePopoverOpen = ref(false)
 
 // Computed property to check if all fields are filled
 const isFormValid = computed(() => {
-  return tripName.value.trim() !== '' &&
+  return destinationValue.value.length > 0 &&
          category.value !== '' &&
          value.value.start && value.value.end
 })
 
 // Function to create and categorize a new trip
 function createTrip() {
+  const destinations = destinationValue.value;
+  let tripName = 'Trip to ';
+  if (destinations.length === 1) {
+    tripName += destinations[0];
+  } else if (destinations.length === 2) {
+    tripName += `${destinations[0]} and ${destinations[1]}`;
+  } else if (destinations.length > 2) {
+    tripName += destinations.slice(0, -1).join(', ') + ' and ' + destinations[destinations.length - 1];
+  }
+
   const newTrip: Trip = {
     id: generateUniqueId(),
-    name: tripName.value,
-    destination: destinationValue.value,
+    name: tripName,
+    destination: destinations,
     startDate: value.value.start,
     endDate: value.value.end,
     category: category.value,
@@ -512,8 +522,6 @@ function selectTrip(trip: Trip) {
 }
 
 function formatDateRange(trip: Trip) {
-  console.log('Formatting start date:', trip.startDate.toString())
-  console.log('Formatting end date:', trip.endDate.toString())
   const start = trip.startDate.toDate(getLocalTimeZone())
   const end = trip.endDate.toDate(getLocalTimeZone())
   return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
@@ -642,7 +650,6 @@ function openCreateDialog() {
 function openEditDialog() {
   if (selectedTrip.value) {
     isEditing.value = true
-    tripName.value = selectedTrip.value.name
     tempDestinationTags.value = [...selectedTrip.value.destination]
     tempInputValue.value = ''
     category.value = selectedTrip.value.category
@@ -655,7 +662,6 @@ function openEditDialog() {
 }
 
 function resetForm() {
-  tripName.value = ''
   destinationTags.value = []
   inputValue.value = ''
   tempDestinationTags.value = []
@@ -670,10 +676,20 @@ function resetForm() {
 
 function updateTrip() {
   if (selectedTrip.value) {
+    const destinations = destinationValue.value;
+    let tripName = 'Trip to ';
+    if (destinations.length === 1) {
+      tripName += destinations[0];
+    } else if (destinations.length === 2) {
+      tripName += `${destinations[0]} and ${destinations[1]}`;
+    } else if (destinations.length > 2) {
+      tripName += destinations.slice(0, -1).join(', ') + ' and ' + destinations[destinations.length - 1];
+    }
+
     const updatedTrip: Trip = {
       ...selectedTrip.value,
-      name: tripName.value,
-      destination: destinationValue.value,
+      name: tripName,
+      destination: destinations,
       startDate: value.value.start,
       endDate: value.value.end,
       category: category.value,
@@ -715,19 +731,15 @@ watch(() => selectedTrip.value, (newTrip) => {
 }, { immediate: true })
 
 function updateStartDate(date) {
-  console.log('Start date updated:', date.toString())
   editDateRange.value.start = date
 }
 
 function updateEndDate(date) {
-  console.log('End date updated:', date.toString())
   editDateRange.value.end = date
 }
 
 function saveDateRange() {
   if (selectedTrip.value && editDateRange.value.start && editDateRange.value.end) {
-    console.log('Saving start date:', editDateRange.value.start.toString())
-    console.log('Saving end date:', editDateRange.value.end.toString())
     selectedTrip.value.startDate = editDateRange.value.start
     selectedTrip.value.endDate = editDateRange.value.end
 
