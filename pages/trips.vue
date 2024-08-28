@@ -61,17 +61,12 @@
                     variant="outline"
                     :class="cn(
                       'w-full justify-start text-left font-normal',
-                      !value && 'text-muted-foreground',
+                      !selectedTrip && 'text-muted-foreground',
                     )"
                   >
                     <CalendarIcon class="mr-2 h-4 w-4" />
-                    <template v-if="value.start">
-                      <template v-if="value.end">
-                        {{ df.format(value.start.toDate(getLocalTimeZone())) }} - {{ df.format(value.end.toDate(getLocalTimeZone())) }}
-                      </template>
-                      <template v-else>
-                        {{ df.format(value.start.toDate(getLocalTimeZone())) }}
-                      </template>
+                    <template v-if="selectedTrip">
+                      {{ df.format(selectedTrip.startDate.toDate(getLocalTimeZone())) }} - {{ df.format(selectedTrip.endDate.toDate(getLocalTimeZone())) }}
                     </template>
                     <template v-else>
                       Pick a date
@@ -79,7 +74,12 @@
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent class="w-auto p-0">
-                  <RangeCalendar v-model="value" initial-focus :number-of-months="1" @update:start-value="(startDate) => value.start = startDate" />
+                  <RangeCalendar 
+                    v-model="calendarValue" 
+                    initial-focus 
+                    :number-of-months="1" 
+                    @update:model-value="updateTripDates"
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -182,11 +182,10 @@
               </PopoverTrigger>
               <PopoverContent class="w-auto p-4">
                 <RangeCalendar 
-                  v-model="editDateRange" 
-                  :initial-focus="true"
-                  :number-of-months="1"
-                  @update:start-value="updateStartDate"
-                  @update:end-value="updateEndDate"
+                  v-model="calendarValue" 
+                  initial-focus 
+                  :number-of-months="1" 
+                  @update:model-value="updateTripDates"
                 />
                 <div class="mt-4 flex justify-end gap-2">
                   <Button @click="closePopover" variant="outline" size="sm">Cancel</Button>
@@ -289,13 +288,16 @@
               <ResizableHandle with-handle class="ml-5" />
               <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold" :default-size="30">
 
-                <Tabs default-value="Packing">
+                <Tabs default-value="Places">
                   <TabsList>
-                    <TabsTrigger value="Packing" class="flex-1">
-                      Packing
+                    <TabsTrigger value="Places" class="flex-1">
+                      Places
                     </TabsTrigger>
-                    <TabsTrigger value="Saved" class="flex-1">
-                      Budget
+                    <TabsTrigger value="Food" class="flex-1">
+                      Food
+                    </TabsTrigger>
+                    <TabsTrigger value="Activities" class="flex-1">
+                      Activities
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="Packing">
@@ -343,9 +345,55 @@
                   <!-- Packing list ends -->
 
                   </TabsContent>
-                  <TabsContent value="Accomodation">
-                                    
-                </TabsContent>
+                  <TabsContent value="Places">
+                  <div class="flex flex-col gap-3 mt-5">
+
+                    <Button 
+                    class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row"
+                  >
+                    <Castle class="app" :stroke-width="2" />
+                    <span class="pl-2">Add places</span>
+                    </Button>
+                    
+                    <!-- Add this new section -->
+                    <div class="flex flex-col gap-2">
+                      <label for="placeLink" class="text-sm font-medium">Paste Google Maps link</label>
+                      <div class="flex gap-2">
+                        <Input 
+                          v-model="placeLink" 
+                          placeholder="https://goo.gl/maps/..." 
+                          class="flex-grow"
+                        />
+                        <Button @click="addPlace" :disabled="!isValidGoogleMapsLink">Add</Button>
+                      </div>
+                    </div>
+                    
+                    <!-- List of added places -->
+                    <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col gap-2 border border-neutral-200 p-4 rounded-lg mt-2">
+                      <div class="flex justify-between items-center">
+                        <div>
+                          <div class="text-sm font-medium">{{ place.name }}</div>
+                          <div class="text-sm text-gray-600">{{ place.address }}</div>
+                        </div>
+                        <Button @click="toggleMapPreview(place)" class="p-2 bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-neutral-600">
+                          <Map class="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div v-if="place.showPreview" class="mt-2">
+                        <iframe 
+                          :src="getPlacePreviewUrl(place.id)"
+                          width="100%" 
+                          height="200" 
+                          style="border:0;" 
+                          allowfullscreen="" 
+                          loading="lazy" 
+                          referrerpolicy="no-referrer-when-downgrade"
+                        ></iframe>
+                      </div>
+                    </div>
+                  
+                  </div>
+                  </TabsContent>
                 </Tabs>
               
               </ResizablePanel>
@@ -379,7 +427,7 @@
             />
           </div>
           <div class="flex flex-col gap-2">
-            <label for="accommodationAddress" class="block text-sm font-medium text-gray-700">Full Address</label>
+            <label for="accommodationAddress" class="block text-sm font-medium text-gray-700">Full address</label>
             <Input 
               v-model="accommodationAddress"
               placeholder="Enter full address"
@@ -389,19 +437,27 @@
           <div class="flex flex-col gap-2">
             <label for="accommodationDates" class="block text-sm font-medium text-gray-700">Check-in and Check-out dates</label>
             <Popover>
-              <PopoverTrigger as-child>
-                <Button variant="outline" class="w-full justify-start text-left font-normal">
-                  <CalendarIcon class="mr-2 h-4 w-4" />
-                  {{ accommodationDates.start && accommodationDates.end
-                    ? `${formatDate(accommodationDates.start)} - ${formatDate(accommodationDates.end)}`
-                    : 'Select dates'
-                  }}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent class="w-auto p-0">
-                <RangeCalendar v-model="accommodationDates" />
-              </PopoverContent>
-            </Popover>
+                <PopoverTrigger as-child>
+                  <Button
+                    variant="outline"
+                    :class="cn(
+                      'w-full justify-start text-left font-normal',
+                      !value && 'text-muted-foreground',
+                    )"
+                  >
+                    <CalendarIcon class="mr-2 h-4 w-4" />
+                    <template v-if="selectedTrip">
+                      {{ df.format(selectedTrip.startDate.toDate(getLocalTimeZone())) }} - {{ df.format(selectedTrip.endDate.toDate(getLocalTimeZone())) }}
+                    </template>
+                    <template v-else>
+                      Pick a date
+                    </template>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-auto p-0">
+                  <RangeCalendar v-model="value" initial-focus :number-of-months="1" @update:start-value="(startDate) => value.start = startDate" />
+                </PopoverContent>
+              </Popover>
           </div>
           <div class="flex flex-col gap-2">
             <label for="accommodationType" class="block text-sm font-medium text-gray-700">Type</label>
@@ -414,8 +470,8 @@
                 <SelectItem value="airbnb">Airbnb</SelectItem>
                 <SelectItem value="family">Family</SelectItem>
                 <SelectItem value="friend">Friend</SelectItem>
-                <SelectItem value="resort">Resort</SelectItem>
                 <SelectItem value="hostel">Hostel</SelectItem>
+                <SelectItem value="hostel">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -435,13 +491,19 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { TicketsPlane } from 'lucide-vue-next'
-import { Backpack } from 'lucide-vue-next';
-import { Plus } from 'lucide-vue-next';
-import { Eraser } from 'lucide-vue-next';
-import { BedDouble } from 'lucide-vue-next';
+import { Backpack } from 'lucide-vue-next'
+import { Plus } from 'lucide-vue-next'
+import { Eraser } from 'lucide-vue-next'
+import { BedDouble } from 'lucide-vue-next'
 import { Trash2 } from 'lucide-vue-next'
 import { Pencil } from 'lucide-vue-next'
-import { Bike } from 'lucide-vue-next';
+import { Bike } from 'lucide-vue-next'
+import { Castle } from 'lucide-vue-next';
+import { MapPinned } from 'lucide-vue-next';
+import { Map } from 'lucide-vue-next';
+
+
+
 
 import {
   Dialog,
@@ -773,8 +835,8 @@ function updateTrip() {
       ...selectedTrip.value,
       name: editTripName.value,
       destination: currentDestinationTags.value,
-      startDate: value.value.start,
-      endDate: value.value.end,
+      startDate: selectedDateRange.value.start,
+      endDate: selectedDateRange.value.end,
       category: category.value,
     }
 
@@ -956,6 +1018,111 @@ function togglePackedStatus(id: number) {
 onMounted(() => {
   loadTripsFromLocalStorage()
 })
+
+const calendarValue = computed({
+  get: () => ({
+    start: selectedTrip.value ? selectedTrip.value.startDate : today(getLocalTimeZone()),
+    end: selectedTrip.value ? selectedTrip.value.endDate : today(getLocalTimeZone()).add({ days: 7 })
+  }),
+  set: (newValue) => {
+    if (selectedTrip.value) {
+      selectedTrip.value.startDate = newValue.start
+      selectedTrip.value.endDate = newValue.end
+    }
+  }
+})
+
+function updateTripDates(newValue) {
+  if (selectedTrip.value) {
+    selectedTrip.value.startDate = newValue.start
+    selectedTrip.value.endDate = newValue.end
+    // Update the trip in the appropriate list
+    const lists = [ongoingTrips, upcomingTrips, pastTrips]
+    lists.forEach(list => {
+      const index = list.value.findIndex(trip => trip.id === selectedTrip.value?.id)
+      if (index !== -1) {
+        list.value[index] = { ...selectedTrip.value }
+      }
+    })
+    saveTripsToLocalStorage()
+  }
+}
+
+const placeLink = ref('')
+const addedPlaces = ref<Array<{id: string, name: string, address: string, showPreview: boolean}>>([])
+
+const isValidGoogleMapsLink = computed(() => {
+  const isValid = placeLink.value.includes('goo.gl/maps') || placeLink.value.includes('google.com/maps')
+  console.log("Is valid Google Maps link:", isValid)
+  return isValid
+})
+
+function extractPlaceId(url: string): string | null {
+  console.log("Extracting placeId from URL:", url);
+  // Handle shortened URLs
+  if (url.includes('goo.gl/maps')) {
+    return url; // Return the entire shortened URL
+  }
+  // For full URLs, try to extract the place ID or query
+  const regex = /!1s([\w\d]+)!|place_id=([\w\d]+)|place\/([\w\d]+)|@([-\d.]+),([-\d.]+)/;
+  const match = url.match(regex);
+  console.log("Regex match result:", match);
+  if (match) {
+    return match[1] || match[2] || match[3] || `${match[4]},${match[5]}`;
+  }
+  return url; // If no match, return the entire URL as a fallback
+}
+
+import loader from '@/googleMapsLoader';  // Adjust the import path as needed
+
+function getPlacePreviewUrl(placeId: string) {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=place_id:${placeId}`
+}
+
+function toggleMapPreview(place: {id: string, showPreview: boolean}) {
+  place.showPreview = !place.showPreview
+}
+
+async function addPlace() {
+  console.log("addPlace function called");
+  const query = extractPlaceId(placeLink.value);
+  console.log("Extracted query:", query);
+  
+  if (query) {
+    try {
+      const google = await loader.load();
+      const service = new google.maps.places.PlacesService(document.createElement('div'));
+      
+      service.findPlaceFromQuery({
+        query: query,
+        fields: ['name', 'formatted_address', 'place_id']
+      }, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
+          const place = results[0];
+          addedPlaces.value.push({
+            id: place.place_id,
+            name: place.name,
+            address: place.formatted_address,
+            showPreview: false  // Initialize with preview hidden
+          });
+          console.log("Place added:", addedPlaces.value);
+          placeLink.value = '';
+        } else {
+          console.error("Place search failed:", status);
+          alert("Failed to find the place. Please try a different link or search term.");
+        }
+      });
+    } catch (error) {
+      console.error("Error loading Google Maps API:", error);
+      alert("An error occurred while adding the place. Please try again.");
+    }
+  } else {
+    console.error("No valid place query extracted");
+    alert("Please enter a valid Google Maps link or place name.");
+  }
+}
+
 </script>
 
 <style scoped>
