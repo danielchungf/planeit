@@ -14,16 +14,20 @@
           <DialogHeader class="mb-2">
             <DialogTitle>{{ isEditing ? 'Edit trip' : 'Create a new trip' }}</DialogTitle>
           </DialogHeader>
-          <div class="space-y-4">
+          <div class="flex flex-col gap-2">
+            <!-- Add this hidden input -->
+            <input type="text" class="hidden" autofocus>
+            
             <div v-if="isEditing" class="flex flex-col gap-2">
               <label for="tripName" class="block text-sm font-medium text-gray-700">Name of the trip</label>
               <Input 
                 v-model="editTripName"
                 placeholder="Enter trip name"
                 class="w-full"
+                ref="tripNameInput"
               />
             </div>
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2 mb-2">
               <label for="destinations" class="block text-sm font-medium text-gray-700">Destinations</label>
               <div class="flex flex-row gap-2 items-center w-full">
                 <Input 
@@ -37,7 +41,7 @@
                 </Button>
               </div>
             </div>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-2 mb-2">
               <Badge 
                 v-for="place in currentDestinationTags" 
                 :key="place" 
@@ -230,28 +234,57 @@
               <ResizablePanel class="flex flex-col gap-5 pt-5 pl-6" :default-size="70">
                 <div class="flex flex-row gap-2">
                   <Button 
+                    @click="openAccommodationDialog"
+                    class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row"
+                  >
+                    <BedDouble class="app" :stroke-width="2" />
+                    <span class="pl-2">Add accommodation</span>
+                  </Button>
+                  <Button 
                     class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row">
-                    <Plus class="app" :stroke-width="3" />
+                    <Bike class="app" :stroke-width="2" />
                     <span class="pl-2">Add plans</span>
                   </Button>
-                  <!-- <Button 
-                  variant="outline" 
-                  class="flex flex-row"
-                  >
-                  <Eraser />
-                  <span class="pl-2">Erase default plans</span>
-                </Button> -->
                
-                  
+                <!-- Accomodation starts -->
+                <!-- <div class="flex flex-row gap-2 border border-neutral-200 p-4 rounded-lg">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger as-child class="">
+                        <BedDouble class="text-sky-600" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Accommodation</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <div class="flex flex-col gap-1 group">
+                    <div class="flex flex-row gap-2 items-center">
+                    <label for="accomodation" class="text-sm font-medium mt-0.5">Hotel Paris</label>
+                      <div class="flex flex-row gap-2 items-center group">
+                        <Button 
+                          class="cursor-pointer rounded-full w-4 h-4 p-0 flex items-center justify-center border-none hover:bg-transparent bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <Pencil class="text-gray-400 w-4 h-4 hover:text-gray-600 transition-colors duration-200" />
+                        </Button>
+                      </div>
+                    </div>
+                    <label for="address" class="text-sm font-normal">1831 Lamont St, San Francisco, CA</label>
+                    <label for="comments"class="text-sm font-normal">Camila already paid for this.</label>
+                  </div>  
+                </div> -->
+                <!-- Accomodation ends -->   
+
                 </div>           
                 <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center justify-between border border-neutral-200 group">
                   <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
-                  <Button 
+                  <!-- <Button 
                     class="cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-transparent border border-gray-300 hover:bg-neutral-100 hover:border-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   >
                     <Eraser class="text-gray-600 w-4 h-4 group-hover:text-gray-800 transition-colors duration-200" />
-                  </Button>
+                  </Button> -->
                 </div>
+
               </ResizablePanel>
               <ResizableHandle with-handle class="ml-5" />
               <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold" :default-size="30">
@@ -260,12 +293,6 @@
                   <TabsList>
                     <TabsTrigger value="Packing" class="flex-1">
                       Packing
-                    </TabsTrigger>
-                    <TabsTrigger value="Accomodation" class="flex-1">
-                      Accommodation
-                    </TabsTrigger>
-                    <TabsTrigger value="Places" class="flex-1">
-                      Places
                     </TabsTrigger>
                     <TabsTrigger value="Saved" class="flex-1">
                       Budget
@@ -317,34 +344,7 @@
 
                   </TabsContent>
                   <TabsContent value="Accomodation">
-                    <!-- Accomodation starts -->
-                    <div class="flex flex-row gap-2 mt-5">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger as-child class="">
-                            <BedDouble class="text-sky-600" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Accomodation</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <div class="flex flex-col gap-1 group">
-                        <div class="flex flex-row gap-2 items-center">
-                        <label for="accomodation" class="text-sm font-medium mt-0.5">Hotel Paris</label>
-                          <div class="flex flex-row gap-2 items-center group">
-                            <Button 
-                              class="cursor-pointer rounded-full w-4 h-4 p-0 flex items-center justify-center border-none hover:bg-transparent bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                            >
-                              <Pencil class="text-gray-400 w-4 h-4 hover:text-gray-600 transition-colors duration-200" />
-                            </Button>
-                          </div>
-                        </div>
-                        <label for="address" class="text-sm font-normal">1831 Lamont St, San Francisco, CA</label>
-                        <label for="comments"class="text-sm font-normal">Camila already paid for this.</label>
-                      </div>  
-                    </div>
-                    <!-- Accomodation ends -->                 
+                                    
                 </TabsContent>
                 </Tabs>
               
@@ -363,6 +363,69 @@
     </div>
     <!-- Content for the trip view ends -->
 
+    <!-- Accommodation dialog -->
+    <Dialog v-model:open="isAccommodationDialogOpen">
+      <DialogContent class="w-[400px]">
+        <DialogHeader>
+          <DialogTitle>Add accommodation</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-4">
+          <div class="flex flex-col gap-2">
+            <label for="accommodationName" class="block text-sm font-medium text-gray-700">Name of the place</label>
+            <Input 
+              v-model="accommodationName"
+              placeholder="Enter accommodation name"
+              class="w-full"
+            />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="accommodationAddress" class="block text-sm font-medium text-gray-700">Full Address</label>
+            <Input 
+              v-model="accommodationAddress"
+              placeholder="Enter full address"
+              class="w-full"
+            />
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="accommodationDates" class="block text-sm font-medium text-gray-700">Check-in and Check-out dates</label>
+            <Popover>
+              <PopoverTrigger as-child>
+                <Button variant="outline" class="w-full justify-start text-left font-normal">
+                  <CalendarIcon class="mr-2 h-4 w-4" />
+                  {{ accommodationDates.start && accommodationDates.end
+                    ? `${formatDate(accommodationDates.start)} - ${formatDate(accommodationDates.end)}`
+                    : 'Select dates'
+                  }}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent class="w-auto p-0">
+                <RangeCalendar v-model="accommodationDates" />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label for="accommodationType" class="block text-sm font-medium text-gray-700">Type</label>
+            <Select v-model="accommodationType">
+              <SelectTrigger>
+                <SelectValue placeholder="Select accommodation type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hotel">Hotel</SelectItem>
+                <SelectItem value="airbnb">Airbnb</SelectItem>
+                <SelectItem value="family">Family</SelectItem>
+                <SelectItem value="friend">Friend</SelectItem>
+                <SelectItem value="resort">Resort</SelectItem>
+                <SelectItem value="hostel">Hostel</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter class="mt-4">
+          <Button @click="addAccommodation" :disabled="!isAccommodationFormValid">Add</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
   </div>
 </template>
 
@@ -378,6 +441,7 @@ import { Eraser } from 'lucide-vue-next';
 import { BedDouble } from 'lucide-vue-next';
 import { Trash2 } from 'lucide-vue-next'
 import { Pencil } from 'lucide-vue-next'
+import { Bike } from 'lucide-vue-next';
 
 import {
   Dialog,
@@ -437,7 +501,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 /* start Date picker */
-import { type Ref, ref, computed, onMounted, watch } from 'vue'
+import { type Ref, ref, computed, onMounted, watch, nextTick } from 'vue'
 import {
   CalendarDate,
   DateFormatter,
@@ -493,9 +557,11 @@ const isDatePopoverOpen = ref(false)
 
 // Computed property to check if all fields are filled
 const isFormValid = computed(() => {
-  return destinationValue.value.length > 0 &&
-         category.value !== '' &&
-         value.value.start && value.value.end
+  if (isEditing.value) {
+    return editTripName.value.trim() !== '' && currentDestinationTags.value.length > 0
+  } else {
+    return currentDestinationTags.value.length > 0
+  }
 })
 
 // Function to create and categorize a new trip
@@ -678,6 +744,13 @@ function openEditDialog() {
       end: selectedTrip.value.endDate
     }
     isDialogOpen.value = true
+
+    // Use nextTick to ensure the DOM has updated
+    nextTick(() => {
+      if (tripNameInput.value) {
+        tripNameInput.value.blur()
+      }
+    })
   }
 }
 
@@ -695,23 +768,11 @@ function resetForm() {
 }
 
 function updateTrip() {
-  if (selectedTrip.value) {
-    const destinations = currentDestinationTags.value;
-    let tripName = isEditing.value ? editTripName.value : 'Trip to ';
-    if (!isEditing.value) {
-      if (destinations.length === 1) {
-        tripName += destinations[0];
-      } else if (destinations.length === 2) {
-        tripName += `${destinations[0]} and ${destinations[1]}`;
-      } else if (destinations.length > 2) {
-        tripName += destinations.slice(0, -1).join(', ') + ' and ' + destinations[destinations.length - 1];
-      }
-    }
-
-    const updatedTrip: Trip = {
+  if (selectedTrip.value && isFormValid.value) {
+    const updatedTrip = {
       ...selectedTrip.value,
-      name: tripName,
-      destination: destinations,
+      name: editTripName.value,
+      destination: currentDestinationTags.value,
       startDate: value.value.start,
       endDate: value.value.end,
       category: category.value,
@@ -790,6 +851,7 @@ function saveDateRangeAndClose() {
 const currentInputValue = ref('')
 const currentDestinationTags = ref<string[]>([])
 const editTripName = ref('')
+const tripNameInput = ref(null)
 
 function addDestination() {
   if (currentInputValue.value.trim()) {
@@ -800,6 +862,47 @@ function addDestination() {
 
 function removeDestination(place: string) {
   currentDestinationTags.value = currentDestinationTags.value.filter(item => item !== place)
+}
+
+const isAccommodationDialogOpen = ref(false)
+const accommodationName = ref('')
+const accommodationAddress = ref('')
+const accommodationDates = ref({ start: null, end: null })
+const accommodationType = ref('')
+
+const isAccommodationFormValid = computed(() => 
+  accommodationName.value.trim() !== '' &&
+  accommodationAddress.value.trim() !== '' &&
+  accommodationDates.value.start &&
+  accommodationDates.value.end &&
+  accommodationType.value !== ''
+)
+
+function openAccommodationDialog() {
+  isAccommodationDialogOpen.value = true
+  // Reset form fields
+  accommodationName.value = ''
+  accommodationAddress.value = ''
+  accommodationDates.value = { start: null, end: null }
+  accommodationType.value = ''
+}
+
+function formatDate(date) {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function addAccommodation() {
+  if (isAccommodationFormValid.value) {
+    // Add logic to save the accommodation
+    console.log('Adding accommodation:', {
+      name: accommodationName.value,
+      address: accommodationAddress.value,
+      dates: accommodationDates.value,
+      type: accommodationType.value
+    })
+    // Close the dialog
+    isAccommodationDialogOpen.value = false
+  }
 }
 
 const destinationValue = computed(() => currentDestinationTags.value)
