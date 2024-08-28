@@ -14,80 +14,105 @@
           <DialogHeader class="mb-2">
             <DialogTitle>{{ isEditing ? 'Edit trip' : 'Create a new trip' }}</DialogTitle>
           </DialogHeader>
-          <label for="destination" class="block text-sm font-medium text-gray-700">Destination</label>
-          <TagsInput 
-            v-model="currentDestinationTags"
-          >
-            <TagsInputItem v-for="item in currentDestinationTags" :key="item" :value="item">
-              <TagsInputItemText />
-              <TagsInputItemDelete />
-            </TagsInputItem>
-            <TagsInputInput 
-              v-model="currentInputValue"
-              class="placeholder:text-neutral-500" 
-              :placeholder="currentDestinationTags.length === 0 ? 'Add cities or places separated by commas' : ''" 
-            />
-          </TagsInput>
-          <label for="dates" class="block text-sm font-medium text-gray-700">Date range</label>
-          <Popover>
-            <PopoverTrigger as-child>
-              <Button
-                variant="outline"
-                :class="cn(
-                  'w-full justify-start text-left font-normal',
-                  !value && 'text-muted-foreground',
-                )"
+          <div class="space-y-4">
+            <div v-if="isEditing" class="flex flex-col gap-2">
+              <label for="tripName" class="block text-sm font-medium text-gray-700">Name of the trip</label>
+              <Input 
+                v-model="editTripName"
+                placeholder="Enter trip name"
+                class="w-full"
+              />
+            </div>
+            <div class="flex flex-col gap-2">
+              <label for="destinations" class="block text-sm font-medium text-gray-700">Destinations</label>
+              <div class="flex flex-row gap-2 items-center w-full">
+                <Input 
+                  v-model="currentInputValue"
+                  placeholder="Country, city, place..."
+                  class="flex-grow"
+                  @keyup.enter="addDestination"
+                />
+                <Button @click="addDestination" :disabled="!currentInputValue.trim()">
+                  <Plus />
+                </Button>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <Badge 
+                v-for="place in currentDestinationTags" 
+                :key="place" 
+                class="bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
               >
-                <CalendarIcon class="mr-2 h-4 w-4" />
-                <template v-if="value.start">
-                  <template v-if="value.end">
-                    {{ df.format(value.start.toDate(getLocalTimeZone())) }} - {{ df.format(value.end.toDate(getLocalTimeZone())) }}
-                  </template>
-                
-                  <template v-else>
-                    {{ df.format(value.start.toDate(getLocalTimeZone())) }}
-                  </template>
-                </template>
-                <template v-else>
-                  Pick a date
-                </template>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent class="w-auto p-0">
-              <RangeCalendar v-model="value" initial-focus :number-of-months="1" @update:start-value="(startDate) => value.start = startDate" />
-            </PopoverContent>
-          </Popover>
-          <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
-          <Select class="" v-model="category">
-            <SelectTrigger>
-              <SelectValue placeholder="Select the purpose of your trip" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="Vacation">
-                  Vacation
-                </SelectItem>
-                <SelectItem value="Work">
-                  Work
-                </SelectItem>
-                <SelectItem value="Family">
-                  Family
-                </SelectItem>
-                <SelectItem value="Health">
-                  Health
-                </SelectItem>
-                <SelectItem value="Education">
-                  Education
-                </SelectItem>
-                <SelectItem value="Nature">
-                  Nature
-                </SelectItem>
-                <SelectItem value="Other">
-                  Other
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+                {{ place }}
+                <button @click="removeDestination(place)" class="ml-1.5 text-neutral-400 hover:text-neutral-600">
+                  &times;
+                </button>
+              </Badge>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label for="dates" class="block text-sm font-medium text-gray-700">Date range</label>
+              <Popover>
+                <PopoverTrigger as-child>
+                  <Button
+                    variant="outline"
+                    :class="cn(
+                      'w-full justify-start text-left font-normal',
+                      !value && 'text-muted-foreground',
+                    )"
+                  >
+                    <CalendarIcon class="mr-2 h-4 w-4" />
+                    <template v-if="value.start">
+                      <template v-if="value.end">
+                        {{ df.format(value.start.toDate(getLocalTimeZone())) }} - {{ df.format(value.end.toDate(getLocalTimeZone())) }}
+                      </template>
+                      <template v-else>
+                        {{ df.format(value.start.toDate(getLocalTimeZone())) }}
+                      </template>
+                    </template>
+                    <template v-else>
+                      Pick a date
+                    </template>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-auto p-0">
+                  <RangeCalendar v-model="value" initial-focus :number-of-months="1" @update:start-value="(startDate) => value.start = startDate" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+              <Select class="" v-model="category">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select the purpose of your trip" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="Vacation">
+                      Vacation
+                    </SelectItem>
+                    <SelectItem value="Work">
+                      Work
+                    </SelectItem>
+                    <SelectItem value="Family">
+                      Family
+                    </SelectItem>
+                    <SelectItem value="Health">
+                      Health
+                    </SelectItem>
+                    <SelectItem value="Education">
+                      Education
+                    </SelectItem>
+                    <SelectItem value="Nature">
+                      Nature
+                    </SelectItem>
+                    <SelectItem value="Other">
+                      Other
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <DialogFooter class="mt-2">
             <Button type="submit" @click="isEditing ? updateTrip() : createTrip()" :disabled="!isFormValid">
               {{ isEditing ? 'Update' : 'Create' }}
@@ -280,12 +305,11 @@
                         {{ item.name }}
                       </span>
                       <Button 
-                        variant="ghost" 
                         size="icon" 
                         @click="removePackingItem(item.id)" 
-                        class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                        class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity bg-transparent border-none hover:bg-transparent"
                       >
-                        <Trash2 class="h-4 w-4 text-neutral-400" />
+                        <Trash2 class="h-4 w-4 text-neutral-400 hover:text-red-500" />
                       </Button>
                     </div>
                   </div>
@@ -412,11 +436,6 @@ import {
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
-/* start City input */
-import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input'
-/* end City input */
-
-
 /* start Date picker */
 import { type Ref, ref, computed, onMounted, watch } from 'vue'
 import {
@@ -481,7 +500,7 @@ const isFormValid = computed(() => {
 
 // Function to create and categorize a new trip
 function createTrip() {
-  const destinations = destinationValue.value;
+  const destinations = currentDestinationTags.value;
   let tripName = 'Trip to ';
   if (destinations.length === 1) {
     tripName += destinations[0];
@@ -650,8 +669,9 @@ function openCreateDialog() {
 function openEditDialog() {
   if (selectedTrip.value) {
     isEditing.value = true
-    tempDestinationTags.value = [...selectedTrip.value.destination]
-    tempInputValue.value = ''
+    editTripName.value = selectedTrip.value.name
+    currentDestinationTags.value = [...selectedTrip.value.destination]
+    currentInputValue.value = ''
     category.value = selectedTrip.value.category
     value.value = {
       start: selectedTrip.value.startDate,
@@ -664,8 +684,8 @@ function openEditDialog() {
 function resetForm() {
   destinationTags.value = []
   inputValue.value = ''
-  tempDestinationTags.value = []
-  tempInputValue.value = ''
+  currentDestinationTags.value = []
+  currentInputValue.value = ''
   category.value = ''
   value.value = {
     start: today(getLocalTimeZone()),
@@ -676,14 +696,16 @@ function resetForm() {
 
 function updateTrip() {
   if (selectedTrip.value) {
-    const destinations = destinationValue.value;
-    let tripName = 'Trip to ';
-    if (destinations.length === 1) {
-      tripName += destinations[0];
-    } else if (destinations.length === 2) {
-      tripName += `${destinations[0]} and ${destinations[1]}`;
-    } else if (destinations.length > 2) {
-      tripName += destinations.slice(0, -1).join(', ') + ' and ' + destinations[destinations.length - 1];
+    const destinations = currentDestinationTags.value;
+    let tripName = isEditing.value ? editTripName.value : 'Trip to ';
+    if (!isEditing.value) {
+      if (destinations.length === 1) {
+        tripName += destinations[0];
+      } else if (destinations.length === 2) {
+        tripName += `${destinations[0]} and ${destinations[1]}`;
+      } else if (destinations.length > 2) {
+        tripName += destinations.slice(0, -1).join(', ') + ' and ' + destinations[destinations.length - 1];
+      }
     }
 
     const updatedTrip: Trip = {
@@ -765,43 +787,22 @@ function saveDateRangeAndClose() {
   closePopover()
 }
 
-const tempDestinationTags = ref<string[]>([])
-const tempInputValue = ref('')
+const currentInputValue = ref('')
+const currentDestinationTags = ref<string[]>([])
+const editTripName = ref('')
 
-const currentInputValue = computed({
-  get() {
-    return isEditing.value ? tempInputValue.value : inputValue.value
-  },
-  set(newValue) {
-    if (isEditing.value) {
-      tempInputValue.value = newValue
-    } else {
-      inputValue.value = newValue
-    }
+function addDestination() {
+  if (currentInputValue.value.trim()) {
+    currentDestinationTags.value.push(currentInputValue.value.trim())
+    currentInputValue.value = ''
   }
-})
+}
 
-const currentDestinationTags = computed({
-  get() {
-    return isEditing.value ? tempDestinationTags.value : destinationTags.value
-  },
-  set(newValue) {
-    if (isEditing.value) {
-      tempDestinationTags.value = newValue
-    } else {
-      destinationTags.value = newValue
-    }
-  }
-})
+function removeDestination(place: string) {
+  currentDestinationTags.value = currentDestinationTags.value.filter(item => item !== place)
+}
 
-const destinationValue = computed(() => {
-  const allValues = isEditing.value ? [...tempDestinationTags.value] : [...destinationTags.value]
-  const inputToCheck = isEditing.value ? tempInputValue.value : inputValue.value
-  if (inputToCheck.trim()) {
-    allValues.push(inputToCheck.trim())
-  }
-  return allValues
-})
+const destinationValue = computed(() => currentDestinationTags.value)
 
 import { addDays, format } from 'date-fns'
 
