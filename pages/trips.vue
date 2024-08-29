@@ -237,11 +237,6 @@
                     <BedDouble class="app" :stroke-width="2" />
                     <span class="pl-2">Add accommodation</span>
                   </Button>
-                  <Button 
-                    class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row">
-                    <Bike class="app" :stroke-width="2" />
-                    <span class="pl-2">Add plans</span>
-                  </Button>
                
                 <!-- Accomodation starts -->
                 <!-- <div class="flex flex-row gap-2 border border-neutral-200 p-4 rounded-lg">
@@ -284,23 +279,120 @@
 
               </ResizablePanel>
               <ResizableHandle with-handle class="ml-5" />
-              <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold min-w-[310px]" :default-size="30">
-                <Tabs default-value="Places">
-                  <TabsList>
-                    <TabsTrigger value="Places" class="flex-1">
-                      Places
-                    </TabsTrigger>
-                    <TabsTrigger value="Food" class="flex-1">
-                      Food
-                    </TabsTrigger>
-                    <TabsTrigger value="Activities" class="flex-1">
-                      Activities
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="Packing">
+              <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold min-w-[350px]" :default-size="30">
+                
+               
+                <div class="flex flex-col gap-5">
+
+                  <div class="border p-4 rounded-md flex flex-col gap-4 relative">
+                    <Minus class="w-5 h-5 rounded-full hover:text-red-500 absolute top-2 right-2" />
+                    <div class="flex flex-col gap-2">
+                      <label class="block text-sm font-medium text-gray-700">Title</label>
+                      <Input 
+                        placeholder="Lunch at Elle's Coffee"
+                        class="w-full font-normal"
+                      />
+                    </div>
+                    <div class="flex flex-col gap-2">
+                      <div class="flex flex-row gap-1">
+                        <label class="block text-sm font-medium text-gray-700">Address</label>
+                        <label class="block text-sm font-normal italic text-gray-500">(optional)</label>
+                        </div>                      <Input 
+                        placeholder="149 Yellow Avenue, New York"
+                        class="w-full font-normal" 
+                      />
+                    </div>
+                    
+                    <Separator class="text-neutral-500 font-medium" label="or" />
+
+                  <!-- Add this new section -->
+                    <div class="flex flex-col gap-2">
+                      <label class="block text-sm font-medium text-gray-700">Google Maps link</label>
+                      <Input 
+                        v-model="placeLink" 
+                        placeholder="https://www.google.com/maps/..." 
+                        class="flex-grow placeholder:text-neutral-500 placeholder:font-normal font-normal"
+                      />
+                      <Button @click="addPlace" :disabled="!isValidGoogleMapsLink"><Plus /></Button>
+                    </div>
+
+                    <Separator class="text-neutral-500 font-medium" label="" />
+
+
+                    <div class="flex flex-col gap-2">
+                      <div class="flex flex-row gap-1">
+                      <label class="block text-sm font-medium text-gray-700">Comments</label>
+                      <label class="block text-sm font-normal italic text-gray-500">(optional)</label>
+                      </div>
+                      <Input 
+                        placeholder="Order the seasonal latte"
+                        class="w-full font-normal" 
+                      />
+                    </div>
+                    <Button 
+                    class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row mt-2" 
+                  >
+                    <Bike class="app" :stroke-width="2" />
+                    <span class="pl-2">Add plans</span>
+                    </Button>
+                  </div>
+                  
+                  
+                  
+                  <!-- List of added places -->
+                  <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col border border-neutral-200 rounded-lg mt-2 group">
+                    <div class="flex flex-row">
+                      <div class="flex justify-between items-center">
+                        <div class="flex flex-col gap-1 p-4">
+                          <div class="text-sm font-medium">
+                            <a 
+                              :href="place.originalUrl" 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              class="text-blue-500 hover:text-blue-700 hover:underline"
+                            >
+                              {{ place.name }}
+                            </a>
+                          </div>
+                          <div class="text-sm font-normal text-gray-500">{{ place.address }}</div>
+                          <div v-if="place.phoneNumber !== 'Not available'" class="text-sm font-normal text-gray-500">📞 {{ place.phoneNumber }}</div>
+                          <div v-if="place.rating !== 'Not rated'" class="text-sm font-normal text-gray-500">⭐ {{ place.rating.toFixed(1) }} ({{ place.reviewCount }} reviews)</div>
+                        </div>
+                      </div>
+                      <div class="flex flex-col justify-between">
+
+                        <Button 
+                          @click="deletePlace(place)" 
+                          class="bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <Trash2 class="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          @click="toggleMapPreview(place)" 
+                          class="bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <MapPinned class="h-4 w-4" />
+                        </Button>
+                        
+                      </div>
+                    </div>
+                    <div v-if="place.showPreview" class="mt-2">
+                      <iframe 
+                        :src="getPlacePreviewUrl(place.id)"
+                        width="100%" 
+                        height="200" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy" 
+                        referrerpolicy="no-referrer-when-downgrade"
+                      ></iframe>
+                    </div>
+                  </div>
+                
+                </div>
 
                   <!-- Packing list starts -->
-                  <div class="flex flex-col gap-2 w-full">
+                  <!-- <div class="flex flex-col gap-2 w-full">
                     <h3 class="text-md font-semibold">Packing list</h3>
                     <div class="grid grid-cols-[1fr,auto] gap-2 items-center w-full">
                       <Input 
@@ -338,85 +430,10 @@
                         <Trash2 class="h-4 w-4 text-neutral-400 hover:text-red-500" />
                       </Button>
                     </div>
-                  </div>
+                  </div> -->
                   <!-- Packing list ends -->
 
-                  </TabsContent>
-                  <TabsContent value="Places">
-                  <div class="flex flex-col gap-5 mt-5">
-
-                    <Button 
-                    class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row"
-                  >
-                    <Castle class="app" :stroke-width="2" />
-                    <span class="pl-2">Add places manually</span>
-                    </Button>
-                    
-                    <Separator class="text-neutral-500 font-medium" label="or" />
-
-                    <!-- Add this new section -->
-                      <div class="flex gap-2">
-                        <Input 
-                          v-model="placeLink" 
-                          placeholder="Paste a Google Maps link..." 
-                          class="flex-grow placeholder:text-neutral-500 placeholder:font-normal font-normal"
-                        />
-                        <Button @click="addPlace" :disabled="!isValidGoogleMapsLink"><Plus /></Button>
-                      </div>
-                    
-                    <!-- List of added places -->
-                    <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col border border-neutral-200 rounded-lg mt-2 group">
-                      <div class="flex flex-row">
-                        <div class="flex justify-between items-center">
-                          <div class="flex flex-col gap-1 p-4">
-                            <div class="text-sm font-medium">
-                              <a 
-                                :href="place.originalUrl" 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                class="text-blue-500 hover:text-blue-700 hover:underline"
-                              >
-                                {{ place.name }}
-                              </a>
-                            </div>
-                            <div class="text-sm font-normal text-gray-500">{{ place.address }}</div>
-                            <div v-if="place.phoneNumber !== 'Not available'" class="text-sm font-normal text-gray-500">📞 {{ place.phoneNumber }}</div>
-                            <div v-if="place.rating !== 'Not rated'" class="text-sm font-normal text-gray-500">⭐ {{ place.rating.toFixed(1) }} ({{ place.reviewCount }} reviews)</div>
-                          </div>
-                        </div>
-                        <div class="flex flex-col justify-between">
-
-                          <Button 
-                            @click="deletePlace(place)" 
-                            class="bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          >
-                            <Trash2 class="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            @click="toggleMapPreview(place)" 
-                            class="bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                          >
-                            <MapPinned class="h-4 w-4" />
-                          </Button>
-                          
-                        </div>
-                      </div>
-                      <div v-if="place.showPreview" class="mt-2">
-                        <iframe 
-                          :src="getPlacePreviewUrl(place.id)"
-                          width="100%" 
-                          height="200" 
-                          style="border:0;" 
-                          allowfullscreen="" 
-                          loading="lazy" 
-                          referrerpolicy="no-referrer-when-downgrade"
-                        ></iframe>
-                      </div>
-                    </div>
-                  
-                  </div>
-                  </TabsContent>
-                </Tabs>
+                
               
               </ResizablePanel>
             </ResizablePanelGroup>
@@ -525,8 +542,7 @@ import { MapPinned } from 'lucide-vue-next';
 import { Map } from 'lucide-vue-next';
 import { Separator } from '@/components/ui/separator'
 import { Star } from 'lucide-vue-next';
-
-
+import { Minus } from 'lucide-vue-next';
 
 import {
   Dialog,
@@ -582,6 +598,15 @@ import {
   MenubarShortcut,
   MenubarTrigger,
 } from '@/components/ui/menubar'
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
