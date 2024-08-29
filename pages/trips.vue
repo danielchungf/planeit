@@ -284,8 +284,7 @@
 
               </ResizablePanel>
               <ResizableHandle with-handle class="ml-5" />
-              <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold" :default-size="30">
-
+              <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold min-w-[310px]" :default-size="30">
                 <Tabs default-value="Places">
                   <TabsList>
                     <TabsTrigger value="Places" class="flex-1">
@@ -372,7 +371,7 @@
                           <div class="flex flex-col gap-1 p-4">
                             <div class="text-sm font-medium">
                               <a 
-                                :href="getGoogleMapsUrl(place)" 
+                                :href="place.originalUrl" 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
                                 class="text-blue-500 hover:text-blue-700 hover:underline"
@@ -1074,7 +1073,7 @@ function updateTripDates(newValue) {
 }
 
 const placeLink = ref('')
-const addedPlaces = ref<Array<{id: string, name: string, address: string, showPreview: boolean, phoneNumber: string, rating: number, reviewCount: number}>>([])
+const addedPlaces = ref<Array<{id: string, name: string, address: string, showPreview: boolean, phoneNumber: string, rating: number, reviewCount: number, originalUrl: string}>>([])
 
 const isValidGoogleMapsLink = computed(() => {
   const link = placeLink.value.trim();
@@ -1127,6 +1126,7 @@ function toggleMapPreview(place: {id: string, showPreview: boolean}) {
 async function addPlace() {
   console.log("addPlace function called with:", placeLink.value);
   const query = await extractPlaceId(placeLink.value);
+  const originalUrl = placeLink.value; // Store the original URL
   console.log("Extracted query:", query);
   
   if (query) {
@@ -1147,7 +1147,7 @@ async function addPlace() {
         console.log("Results:", results);
         
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
-          handlePlaceResult(results[0]);
+          handlePlaceResult(results[0], originalUrl);
         } else {
           // If findPlaceFromQuery fails, try textSearch with a more generic query
           const genericQuery = extractGenericQuery(query);
@@ -1160,7 +1160,7 @@ async function addPlace() {
             console.log("Results:", results);
             
             if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
-              handlePlaceResult(results[0]);
+              handlePlaceResult(results[0], originalUrl);
             } else {
               console.error("Place search failed. Status:", status);
               alert("Failed to find the place. Please try a different link or search term.");
@@ -1178,7 +1178,7 @@ async function addPlace() {
   }
 }
 
-function handlePlaceResult(place) {
+function handlePlaceResult(place, originalUrl: string) {
   console.log("Place found:", place);
   addedPlaces.value.push({
     id: place.place_id,
@@ -1187,7 +1187,8 @@ function handlePlaceResult(place) {
     phoneNumber: place.phone_number || 'Not available',
     rating: place.rating || 'Not rated',
     reviewCount: place.user_ratings_total || 0,
-    showPreview: false
+    showPreview: false,
+    originalUrl: originalUrl // Store the original URL
   });
   console.log("Place added to list:", addedPlaces.value);
   placeLink.value = '';
