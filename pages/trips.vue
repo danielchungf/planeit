@@ -90,29 +90,27 @@
                   <SelectValue placeholder="Select the purpose of your trip" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="Vacation">
-                      Vacation
-                    </SelectItem>
-                    <SelectItem value="Work">
-                      Work
-                    </SelectItem>
-                    <SelectItem value="Family">
-                      Family
-                    </SelectItem>
-                    <SelectItem value="Health">
-                      Health
-                    </SelectItem>
-                    <SelectItem value="Education">
-                      Education
-                    </SelectItem>
-                    <SelectItem value="Nature">
-                      Nature
-                    </SelectItem>
-                    <SelectItem value="Other">
-                      Other
-                    </SelectItem>
-                  </SelectGroup>
+                  <SelectItem value="Vacation">
+                    Vacation
+                  </SelectItem>
+                  <SelectItem value="Work">
+                    Work
+                  </SelectItem>
+                  <SelectItem value="Family">
+                    Family
+                  </SelectItem>
+                  <SelectItem value="Health">
+                    Health
+                  </SelectItem>
+                  <SelectItem value="Education">
+                    Education
+                  </SelectItem>
+                  <SelectItem value="Nature">
+                    Nature
+                  </SelectItem>
+                  <SelectItem value="Other">
+                    Other
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -346,38 +344,63 @@
 
                   </TabsContent>
                   <TabsContent value="Places">
-                  <div class="flex flex-col gap-3 mt-5">
+                  <div class="flex flex-col gap-5 mt-5">
 
                     <Button 
                     class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row"
                   >
                     <Castle class="app" :stroke-width="2" />
-                    <span class="pl-2">Add places</span>
+                    <span class="pl-2">Add places manually</span>
                     </Button>
                     
+                    <Separator class="text-neutral-500 font-medium" label="or" />
+
                     <!-- Add this new section -->
-                    <div class="flex flex-col gap-2">
-                      <label for="placeLink" class="text-sm font-medium">Paste Google Maps link</label>
                       <div class="flex gap-2">
                         <Input 
                           v-model="placeLink" 
-                          placeholder="https://goo.gl/maps/..." 
-                          class="flex-grow"
+                          placeholder="Paste a Google Maps link..." 
+                          class="flex-grow placeholder:text-neutral-500 placeholder:font-normal font-normal"
                         />
-                        <Button @click="addPlace" :disabled="!isValidGoogleMapsLink">Add</Button>
+                        <Button @click="addPlace" :disabled="!isValidGoogleMapsLink"><Plus /></Button>
                       </div>
-                    </div>
                     
                     <!-- List of added places -->
-                    <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col gap-2 border border-neutral-200 p-4 rounded-lg mt-2">
-                      <div class="flex justify-between items-center">
-                        <div>
-                          <div class="text-sm font-medium">{{ place.name }}</div>
-                          <div class="text-sm text-gray-600">{{ place.address }}</div>
+                    <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col border border-neutral-200 rounded-lg mt-2 group">
+                      <div class="flex flex-row">
+                        <div class="flex justify-between items-center">
+                          <div class="flex flex-col gap-1 p-4">
+                            <div class="text-sm font-medium">
+                              <a 
+                                :href="getGoogleMapsUrl(place)" 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                class="text-blue-500 hover:text-blue-700 hover:underline"
+                              >
+                                {{ place.name }}
+                              </a>
+                            </div>
+                            <div class="text-sm font-normal text-gray-500">{{ place.address }}</div>
+                            <div v-if="place.phoneNumber !== 'Not available'" class="text-sm font-normal text-gray-500">📞 {{ place.phoneNumber }}</div>
+                            <div v-if="place.rating !== 'Not rated'" class="text-sm font-normal text-gray-500">⭐ {{ place.rating.toFixed(1) }} ({{ place.reviewCount }} reviews)</div>
+                          </div>
                         </div>
-                        <Button @click="toggleMapPreview(place)" class="p-2 bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-neutral-600">
-                          <Map class="h-4 w-4" />
-                        </Button>
+                        <div class="flex flex-col justify-between">
+
+                          <Button 
+                            @click="deletePlace(place)" 
+                            class="bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          >
+                            <Trash2 class="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            @click="toggleMapPreview(place)" 
+                            class="bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          >
+                            <MapPinned class="h-4 w-4" />
+                          </Button>
+                          
+                        </div>
                       </div>
                       <div v-if="place.showPreview" class="mt-2">
                         <iframe 
@@ -501,7 +524,8 @@ import { Bike } from 'lucide-vue-next'
 import { Castle } from 'lucide-vue-next';
 import { MapPinned } from 'lucide-vue-next';
 import { Map } from 'lucide-vue-next';
-
+import { Separator } from '@/components/ui/separator'
+import { Star } from 'lucide-vue-next';
 
 
 
@@ -577,6 +601,7 @@ import type { DateRange } from 'radix-vue'
 import { RangeCalendar } from '@/components/ui/range-calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import loader from '@/googleMapsLoader'
 
 const df = new DateFormatter('en-US', {
   dateStyle: 'medium',
@@ -1049,31 +1074,46 @@ function updateTripDates(newValue) {
 }
 
 const placeLink = ref('')
-const addedPlaces = ref<Array<{id: string, name: string, address: string, showPreview: boolean}>>([])
+const addedPlaces = ref<Array<{id: string, name: string, address: string, showPreview: boolean, phoneNumber: string, rating: number, reviewCount: number}>>([])
 
 const isValidGoogleMapsLink = computed(() => {
-  const isValid = placeLink.value.includes('goo.gl/maps') || placeLink.value.includes('google.com/maps')
-  console.log("Is valid Google Maps link:", isValid)
-  return isValid
+  const link = placeLink.value.trim();
+  return link.includes('google.com/maps') || 
+         link.includes('goo.gl/maps') || 
+         link.includes('maps.app.goo.gl') ||
+         /^@?https?:\/\/maps\.app\.goo\.gl\/\w+$/.test(link);
 })
 
-function extractPlaceId(url: string): string | null {
+async function extractPlaceId(url: string): Promise<string> {
   console.log("Extracting placeId from URL:", url);
-  // Handle shortened URLs
-  if (url.includes('goo.gl/maps')) {
-    return url; // Return the entire shortened URL
+  
+  // Remove the "@" symbol if present
+  url = url.startsWith('@') ? url.slice(1) : url;
+  
+  // For shortened URLs, return the entire URL
+  if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+    return url;
   }
-  // For full URLs, try to extract the place ID or query
-  const regex = /!1s([\w\d]+)!|place_id=([\w\d]+)|place\/([\w\d]+)|@([-\d.]+),([-\d.]+)/;
-  const match = url.match(regex);
-  console.log("Regex match result:", match);
-  if (match) {
-    return match[1] || match[2] || match[3] || `${match[4]},${match[5]}`;
-  }
-  return url; // If no match, return the entire URL as a fallback
-}
 
-import loader from '@/googleMapsLoader';  // Adjust the import path as needed
+  try {
+    const urlObj = new URL(url);
+    const pathSegments = urlObj.pathname.split('/');
+    const placeIndex = pathSegments.indexOf('place');
+    if (placeIndex !== -1 && placeIndex < pathSegments.length - 1) {
+      // Extract the place name from the URL path
+      return decodeURIComponent(pathSegments[placeIndex + 1].split('+').join(' '));
+    }
+    // If we can't find a place in the path, look for it in the query parameters
+    const placeParam = urlObj.searchParams.get('q') || urlObj.searchParams.get('query');
+    if (placeParam) {
+      return decodeURIComponent(placeParam);
+    }
+  } catch (error) {
+    console.error("Error parsing URL:", error);
+  }
+  // If all else fails, return the entire URL
+  return url;
+}
 
 function getPlacePreviewUrl(placeId: string) {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
@@ -1085,42 +1125,88 @@ function toggleMapPreview(place: {id: string, showPreview: boolean}) {
 }
 
 async function addPlace() {
-  console.log("addPlace function called");
-  const query = extractPlaceId(placeLink.value);
+  console.log("addPlace function called with:", placeLink.value);
+  const query = await extractPlaceId(placeLink.value);
   console.log("Extracted query:", query);
   
   if (query) {
     try {
+      console.log("Loading Google Maps API...");
       const google = await loader.load();
-      const service = new google.maps.places.PlacesService(document.createElement('div'));
+      console.log("Google Maps API loaded successfully");
       
+      const service = new google.maps.places.PlacesService(document.createElement('div'));
+      console.log("PlacesService created");
+      
+      console.log("Performing findPlaceFromQuery with query:", query);
       service.findPlaceFromQuery({
         query: query,
-        fields: ['name', 'formatted_address', 'place_id']
+        fields: ['name', 'formatted_address', 'place_id', 'phone_number', 'rating', 'user_ratings_total']
       }, (results, status) => {
+        console.log("findPlaceFromQuery completed. Status:", status);
+        console.log("Results:", results);
+        
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
-          const place = results[0];
-          addedPlaces.value.push({
-            id: place.place_id,
-            name: place.name,
-            address: place.formatted_address,
-            showPreview: false  // Initialize with preview hidden
-          });
-          console.log("Place added:", addedPlaces.value);
-          placeLink.value = '';
+          handlePlaceResult(results[0]);
         } else {
-          console.error("Place search failed:", status);
-          alert("Failed to find the place. Please try a different link or search term.");
+          // If findPlaceFromQuery fails, try textSearch with a more generic query
+          const genericQuery = extractGenericQuery(query);
+          console.log("Performing textSearch with generic query:", genericQuery);
+          service.textSearch({
+            query: genericQuery,
+            fields: ['name', 'formatted_address', 'place_id', 'phone_number', 'rating', 'user_ratings_total']
+          }, (results, status) => {
+            console.log("textSearch completed. Status:", status);
+            console.log("Results:", results);
+            
+            if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
+              handlePlaceResult(results[0]);
+            } else {
+              console.error("Place search failed. Status:", status);
+              alert("Failed to find the place. Please try a different link or search term.");
+            }
+          });
         }
       });
     } catch (error) {
-      console.error("Error loading Google Maps API:", error);
+      console.error("Error in addPlace function:", error);
       alert("An error occurred while adding the place. Please try again.");
     }
   } else {
     console.error("No valid place query extracted");
     alert("Please enter a valid Google Maps link or place name.");
   }
+}
+
+function handlePlaceResult(place) {
+  console.log("Place found:", place);
+  addedPlaces.value.push({
+    id: place.place_id,
+    name: place.name,
+    address: place.formatted_address,
+    phoneNumber: place.phone_number || 'Not available',
+    rating: place.rating || 'Not rated',
+    reviewCount: place.user_ratings_total || 0,
+    showPreview: false
+  });
+  console.log("Place added to list:", addedPlaces.value);
+  placeLink.value = '';
+}
+
+function extractGenericQuery(url: string): string {
+  // Extract a more generic search term from the URL
+  // This is a simple example and might need to be adjusted based on your URL patterns
+  const parts = url.split('/');
+  return parts[parts.length - 1].replace(/[+\-_]/g, ' ');
+}
+
+function getGoogleMapsUrl(place: Place): string {
+  const encodedAddress = encodeURIComponent(place.address);
+  return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+}
+
+function deletePlace(placeToDelete: Place) {
+  addedPlaces.value = addedPlaces.value.filter(place => place.id !== placeToDelete.id)
 }
 
 </script>
