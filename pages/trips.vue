@@ -1108,53 +1108,41 @@ const isValidGoogleMapsLink = computed(() => {
          /^@?https?:\/\/maps\.app\.goo\.gl\/\w+$/.test(link);
 })
 
-async function extractPlaceId(url: string): Promise<string> {
-  console.log("Extracting placeId from URL:", url);
+async function extractPlaceInfo(url: string): Promise<{ name: string, lat: number, lng: number } | null> {
+  console.log("Extracting place info from URL:", url);
   
-  // Remove the "@" symbol if present
-  url = url.startsWith('@') ? url.slice(1) : url;
-  
-  // For shortened URLs, return the entire URL
-  if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-    return url;
-  }
-
   try {
     const urlObj = new URL(url);
     const pathSegments = urlObj.pathname.split('/');
     const placeIndex = pathSegments.indexOf('place');
+    
     if (placeIndex !== -1 && placeIndex < pathSegments.length - 1) {
-      // Extract the place name from the URL path
-      return decodeURIComponent(pathSegments[placeIndex + 1].split('+').join(' '));
+      const placeName = decodeURIComponent(pathSegments[placeIndex + 1]);
+      const coords = urlObj.pathname.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      
+      if (coords) {
+        return {
+          name: placeName,
+          lat: parseFloat(coords[1]),
+          lng: parseFloat(coords[2])
+        };
+      }
     }
-    // If we can't find a place in the path, look for it in the query parameters
-    const placeParam = urlObj.searchParams.get('q') || urlObj.searchParams.get('query');
-    if (placeParam) {
-      return decodeURIComponent(placeParam);
-    }
+    
+    console.error("Could not extract place info from URL");
+    return null;
   } catch (error) {
     console.error("Error parsing URL:", error);
+    return null;
   }
-  // If all else fails, return the entire URL
-  return url;
-}
-
-function getPlacePreviewUrl(placeId: string) {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-  return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=place_id:${placeId}`
-}
-
-function toggleMapPreview(place: {id: string, showPreview: boolean}) {
-  place.showPreview = !place.showPreview
 }
 
 async function addPlace() {
   console.log("addPlace function called with:", placeLink.value);
-  const query = await extractPlaceId(placeLink.value);
-  const originalUrl = placeLink.value; // Store the original URL
-  console.log("Extracted query:", query);
+  const placeInfo = await extractPlaceInfo(placeLink.value);
+  const originalUrl = placeLink.value;
   
-  if (query) {
+  if (placeInfo) {
     try {
       console.log("Loading Google Maps API...");
       const google = await loader.load();
@@ -1163,34 +1151,22 @@ async function addPlace() {
       const service = new google.maps.places.PlacesService(document.createElement('div'));
       console.log("PlacesService created");
       
-      console.log("Performing findPlaceFromQuery with query:", query);
-      service.findPlaceFromQuery({
-        query: query,
-        fields: ['name', 'formatted_address', 'place_id', 'phone_number', 'rating', 'user_ratings_total']
-      }, (results, status) => {
-        console.log("findPlaceFromQuery completed. Status:", status);
+      const request = {
+        query: placeInfo.name,
+        location: new google.maps.LatLng(placeInfo.lat, placeInfo.lng),
+        radius: 100, // Search within 100 meters of the given coordinates
+        fields: ['name', 'formatted_address', 'place_id', 'geometry', 'rating', 'user_ratings_total', 'photos', 'formatted_phone_number']
+      };
+      
+      service.textSearch(request, (results, status) => {
+        console.log("Text search completed. Status:", status);
         console.log("Results:", results);
         
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
           handlePlaceResult(results[0], originalUrl);
         } else {
-          // If findPlaceFromQuery fails, try textSearch with a more generic query
-          const genericQuery = extractGenericQuery(query);
-          console.log("Performing textSearch with generic query:", genericQuery);
-          service.textSearch({
-            query: genericQuery,
-            fields: ['name', 'formatted_address', 'place_id', 'phone_number', 'rating', 'user_ratings_total']
-          }, (results, status) => {
-            console.log("textSearch completed. Status:", status);
-            console.log("Results:", results);
-            
-            if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
-              handlePlaceResult(results[0], originalUrl);
-            } else {
-              console.error("Place search failed. Status:", status);
-              alert("Failed to find the place. Please try a different link or search term.");
-            }
-          });
+          console.error("Place search failed. Status:", status);
+          alert("Failed to find the place. Please try a different link.");
         }
       });
     } catch (error) {
@@ -1198,8 +1174,8 @@ async function addPlace() {
       alert("An error occurred while adding the place. Please try again.");
     }
   } else {
-    console.error("No valid place query extracted");
-    alert("Please enter a valid Google Maps link or place name.");
+    console.error("No valid place info extracted");
+    alert("Could not extract place information from the provided link. Please try a different Google Maps link.");
   }
 }
 
@@ -1209,30 +1185,18 @@ function handlePlaceResult(place, originalUrl: string) {
     id: place.place_id,
     name: place.name,
     address: place.formatted_address,
-    phoneNumber: place.phone_number || 'Not available',
+    phoneNumber: place.formatted_phone_number || 'Not available',
     rating: place.rating || 'Not rated',
     reviewCount: place.user_ratings_total || 0,
     showPreview: false,
-    originalUrl: originalUrl // Store the original URL
+    originalUrl: originalUrl
   });
   console.log("Place added to list:", addedPlaces.value);
   placeLink.value = '';
 }
 
-function extractGenericQuery(url: string): string {
-  // Extract a more generic search term from the URL
-  // This is a simple example and might need to be adjusted based on your URL patterns
-  const parts = url.split('/');
-  return parts[parts.length - 1].replace(/[+\-_]/g, ' ');
-}
-
-function getGoogleMapsUrl(place: Place): string {
-  const encodedAddress = encodeURIComponent(place.address);
-  return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
-}
-
-function deletePlace(placeToDelete: Place) {
-  addedPlaces.value = addedPlaces.value.filter(place => place.id !== placeToDelete.id)
+function toggleMapPreview(place) {
+  place.showPreview = !place.showPreview;
 }
 
 </script>
