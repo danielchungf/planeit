@@ -378,7 +378,7 @@
                     </div>
                     <div v-if="place.showPreview" class="mt-2">
                       <iframe 
-                        :src="getPlacePreviewUrl(place.id)"
+                        :src="getPlacePreviewUrl(place)"
                         width="100%" 
                         height="200" 
                         style="border:0;" 
@@ -1197,6 +1197,18 @@ function handlePlaceResult(place, originalUrl: string) {
 
 function toggleMapPreview(place) {
   place.showPreview = !place.showPreview;
+}
+
+function deletePlace(placeToDelete) {
+  addedPlaces.value = addedPlaces.value.filter(place => place.id !== placeToDelete.id)
+}
+
+const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+
+function getPlacePreviewUrl(place) {
+  if (!place || !place.name) return ''
+  const encodedName = encodeURIComponent(place.name)
+  return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedName}`
 }
 
 </script>
