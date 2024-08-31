@@ -377,7 +377,7 @@
                       </div>
                     </div>
                     <div v-if="place.showPreview" class="mt-2">
-                      <iframe 
+                      <iframe
                         :src="getPlacePreviewUrl(place)"
                         width="100%" 
                         height="200" 
@@ -1137,6 +1137,27 @@ async function extractPlaceInfo(url: string): Promise<{ name: string, lat: numbe
   }
 }
 
+function extractCoordinates(url: string): { lat: string, lng: string } | null {
+  const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (match) {
+    return { lat: match[1], lng: match[2] };
+  }
+  return null;
+}
+
+function getPlacePreviewUrl(place: { originalUrl: string, name: string }): string {
+  const coords = extractCoordinates(place.originalUrl);
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  
+  if (coords) {
+    return `https://www.google.com/maps/embed/v1/view?key=${apiKey}&center=${coords.lat},${coords.lng}&zoom=18`;
+  } else {
+    // Fallback to search by name if coordinates are not found
+    const encodedName = encodeURIComponent(place.name);
+    return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedName}`;
+  }
+}
+
 async function addPlace() {
   console.log("addPlace function called with:", placeLink.value);
   const placeInfo = await extractPlaceInfo(placeLink.value);
@@ -1201,14 +1222,6 @@ function toggleMapPreview(place) {
 
 function deletePlace(placeToDelete) {
   addedPlaces.value = addedPlaces.value.filter(place => place.id !== placeToDelete.id)
-}
-
-const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-
-function getPlacePreviewUrl(place) {
-  if (!place || !place.name) return ''
-  const encodedName = encodeURIComponent(place.name)
-  return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedName}`
 }
 
 </script>
