@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-screen">
-    <!-- Content for sidebar starts -->
+    <!-- Content for left sidebar starts -->
     <div class="w-[250px] bg-neutral-100 h-full border-r border-neutral-200 flex flex-col gap-6 p-5">
       <Dialog v-model:open="isDialogOpen">
         <DialogTrigger @click="openCreateDialog" class="mb-3">
@@ -61,24 +61,22 @@
                     variant="outline"
                     :class="cn(
                       'w-full justify-start text-left font-normal',
-                      !selectedTrip && 'text-muted-foreground',
+                      !value.start && 'text-muted-foreground'
                     )"
                   >
                     <CalendarIcon class="mr-2 h-4 w-4" />
-                    <template v-if="selectedTrip">
-                      {{ df.format(selectedTrip.startDate.toDate(getLocalTimeZone())) }} - {{ df.format(selectedTrip.endDate.toDate(getLocalTimeZone())) }}
-                    </template>
-                    <template v-else>
-                      Pick a date
-                    </template>
+                    {{ value.start && value.end
+                      ? `${formatDateForDisplay(value.start)} - ${formatDateForDisplay(value.end)}`
+                      : 'Pick a date'
+                    }}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent class="w-auto p-0">
                   <RangeCalendar 
-                    v-model="calendarValue" 
+                    v-model="value" 
                     initial-focus 
                     :number-of-months="1" 
-                    @update:model-value="updateTripDates"
+                    @update:model-value="updateDateRange"
                   />
                 </PopoverContent>
               </Popover>
@@ -159,7 +157,7 @@
         </div>
       </div>
     </div>
-    <!-- Content for the sidebar ends -->
+    <!-- Content for the left sidebar ends -->
 
     <!-- Content for the trip view starts -->
     <div class="flex-1 bg-white">
@@ -180,10 +178,11 @@
               </PopoverTrigger>
               <PopoverContent class="w-auto p-4">
                 <RangeCalendar 
-                  v-model="calendarValue" 
-                  initial-focus 
-                  :number-of-months="1" 
-                  @update:model-value="updateTripDates"
+                  v-model="tripEditDateRange" 
+                  :initial-focus="true"
+                  :number-of-months="1"
+                  @update:start-value="updateStartDate"
+                  @update:end-value="updateEndDate"
                 />
                 <div class="mt-4 flex justify-end gap-2">
                   <Button @click="closePopover" variant="outline" size="sm">Cancel</Button>
@@ -632,9 +631,18 @@ const df = new DateFormatter('en-US', {
 })
 
 const value = ref({
-  start: today(getLocalTimeZone()),
-  end: today(getLocalTimeZone()).add({ days: 7 }),
-}) as Ref<DateRange>
+  start: null,
+  end: null
+})
+
+function formatDateForDisplay(date) {
+  if (!date) return ''
+  return formatDate(date.toDate(getLocalTimeZone()))
+}
+
+function updateDateRange(newValue) {
+  value.value = newValue
+}
 /* end Date picker */
 
 interface Trip {
@@ -665,6 +673,7 @@ const selectedTrip = ref<Trip | null>(null)
 const isDialogOpen = ref(false)
 const isEditing = ref(false)
 const isDatePopoverOpen = ref(false)
+const tripEditDateRange = ref({ start: null, end: null })
 
 // Computed property to check if all fields are filled
 const isFormValid = computed(() => {
@@ -715,12 +724,15 @@ function createTrip() {
 
 function selectTrip(trip: Trip) {
   selectedTrip.value = trip
+  tripEditDateRange.value = {
+    start: trip.startDate,
+    end: trip.endDate
+  }
 }
 
 function formatDateRange(trip: Trip) {
-  const start = trip.startDate.toDate(getLocalTimeZone())
-  const end = trip.endDate.toDate(getLocalTimeZone())
-  return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+  if (!trip) return ''
+  return `${formatDateForDisplay(trip.startDate)} - ${formatDateForDisplay(trip.endDate)}`
 }
 
 function calculateDaysAndNights(trip: Trip) {
@@ -910,14 +922,9 @@ function truncateName(name: string, maxLength: number = 30): string {
   return name.slice(0, maxLength) + '...';
 }
 
-const editDateRange = ref({
-  start: null,
-  end: null
-})
-
 watch(() => selectedTrip.value, (newTrip) => {
   if (newTrip) {
-    editDateRange.value = {
+    tripEditDateRange.value = {
       start: newTrip.startDate,
       end: newTrip.endDate
     }
@@ -925,17 +932,17 @@ watch(() => selectedTrip.value, (newTrip) => {
 }, { immediate: true })
 
 function updateStartDate(date) {
-  editDateRange.value.start = date
+  tripEditDateRange.value.start = date
 }
 
 function updateEndDate(date) {
-  editDateRange.value.end = date
+  tripEditDateRange.value.end = date
 }
 
 function saveDateRange() {
-  if (selectedTrip.value && editDateRange.value.start && editDateRange.value.end) {
-    selectedTrip.value.startDate = editDateRange.value.start
-    selectedTrip.value.endDate = editDateRange.value.end
+  if (selectedTrip.value && tripEditDateRange.value.start && tripEditDateRange.value.end) {
+    selectedTrip.value.startDate = tripEditDateRange.value.start
+    selectedTrip.value.endDate = tripEditDateRange.value.end
 
     // Update the trip in the appropriate list
     const lists = [ongoingTrips, upcomingTrips, pastTrips]
@@ -955,8 +962,12 @@ function closePopover() {
 }
 
 function saveDateRangeAndClose() {
-  saveDateRange()
-  closePopover()
+  if (selectedTrip.value && tripEditDateRange.value.start && tripEditDateRange.value.end) {
+    selectedTrip.value.startDate = tripEditDateRange.value.start
+    selectedTrip.value.endDate = tripEditDateRange.value.end
+    updateTripDates(selectedTrip.value)
+  }
+  isDatePopoverOpen.value = false
 }
 
 const currentInputValue = ref('')

@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxtjs/tailwindcss", "shadcn-nuxt"],
+
   shadcn: {
     /**
      * Prefix for all the imported component
@@ -13,6 +14,7 @@ export default defineNuxtConfig({
      */
     componentDir: './components/ui'
   },
+
   app: {
     head: {
       link: [
@@ -20,6 +22,7 @@ export default defineNuxtConfig({
         { rel: 'stylesheet', href: '/fonts/fonts.css' }
       ]
     }
-  }
-})
+  },
 
+  compatibilityDate: '2024-09-04'
+})
