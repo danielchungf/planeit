@@ -1,13 +1,21 @@
 <template>
   <div class="flex h-screen">
     <!-- Content for left sidebar starts -->
-    <div class="w-[250px] bg-neutral-100 h-full border-r border-neutral-200 flex flex-col gap-6 p-5">
+    <div :class="[
+      'bg-neutral-100 h-full border-r border-neutral-200 flex flex-col gap-6 transition-all duration-300',
+      isSidebarCollapsed ? 'w-[60px] items-center p-5' : 'w-[250px] p-5'
+    ]">
       <Dialog v-model:open="isDialogOpen">
-        <DialogTrigger @click="openCreateDialog" class="mb-3">
-          <Button 
-          class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 w-full">
-          <TicketsPlane />
-          <span class="pl-2">Create a new trip</span>
+        <DialogTrigger @click="openCreateDialog" :class="[
+          'mb-3',
+          isSidebarCollapsed ? 'w-10 h-10 p-0' : 'w-full'
+        ]">
+          <Button :class="[
+            'hover:bg-neutral-800 hover:text-white transition-colors duration-300',
+            isSidebarCollapsed ? 'w-10 h-10 p-0 justify-center' : 'w-full'
+          ]">
+            <TicketsPlane :class="isSidebarCollapsed ? 'w-5 h-5' : 'w-5 h-5'" />
+            <span v-if="!isSidebarCollapsed" class="pl-2">Create a new trip</span>
           </Button>
         </DialogTrigger>
         <DialogContent class="w-[400px]">
@@ -121,7 +129,7 @@
         </DialogContent>
       </Dialog>
       
-      <div class="flex flex-col gap-4">
+      <div v-if="!isSidebarCollapsed" class="flex flex-col gap-4">
         <div class="flex flex-col gap-1" v-if="ongoingTrips.length > 0">
           <h2 class="text-sm font-semibold mb-1">Ongoing trips</h2>
           <div v-for="trip in ongoingTrips" :key="trip.id" 
@@ -155,6 +163,24 @@
         <div v-if="!ongoingTrips.length && !upcomingTrips.length && !pastTrips.length" class="flex justify-center items-center text-sm font-medium text-gray-500">
           No trips created yet.
         </div>
+      </div>
+
+      <!-- Spacer to push the buttons to the bottom -->
+      <div class="flex-grow"></div>
+
+      <!-- Buttons container -->
+      <div :class="[
+        'flex',
+        isSidebarCollapsed ? 'flex-col items-center gap-4' : 'justify-end'
+      ]">
+        <!-- Toggle sidebar button -->
+        <Button 
+          @click="toggleSidebar"
+          class="w-10 h-10 p-0 bg-transparent hover:bg-neutral-200 transition-colors duration-300 text-neutral-600"
+        >
+          <ArrowLeftFromLine v-if="!isSidebarCollapsed" class="w-5 h-5" />
+          <ArrowRightFromLine v-else class="w-5 h-5" />
+        </Button>
       </div>
     </div>
     <!-- Content for the left sidebar ends -->
@@ -226,7 +252,7 @@
         <div class="h-[calc(100vh-110px)] flex flex-col gap-3 overflow-y-auto">
           <div v-if="selectedTrip" class="">
             <ResizablePanelGroup direction="horizontal" class="">
-              <ResizablePanel class="flex flex-col gap-5 pt-5 pl-6" :default-size="70">
+              <ResizablePanel class="flex flex-col gap-5 p-5 pl-6" :default-size="70">
                 <div class="flex flex-row gap-2">
                   <Button 
                     @click="openAccommodationDialog"
@@ -276,8 +302,8 @@
                 </div>
 
               </ResizablePanel>
-              <ResizableHandle class="ml-5 h-screen" />
-              <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold min-w-[350px]" :default-size="30">
+              <ResizableHandle class="ml-5 h-full" />
+              <ResizablePanel class="p-5 pr-6 pl-5 bg-white text-md font-semibold min-w-[350px]" :default-size="30">
                 
                 <div class="flex flex-col gap-5">
 
@@ -286,7 +312,7 @@
                     <div class="flex flex-col gap-2">
                       <label class="block text-sm font-medium text-gray-700">Title</label>
                       <Input 
-                        placeholder="Lunch at Elle's Coffee"
+                        placeholder="Lunch at Pacha's Coffee"
                         class="w-full font-normal"
                       />
                     </div>
@@ -322,7 +348,7 @@
                       <label class="block text-sm font-normal italic text-gray-500">(optional)</label>
                       </div>
                       <Input 
-                        placeholder="Order the seasonal latte"
+                        placeholder="Order their purple corn drink"
                         class="w-full font-normal" 
                       />
                     </div>
@@ -538,6 +564,8 @@ import { Map } from 'lucide-vue-next';
 import { Separator } from '@/components/ui/separator'
 import { Star } from 'lucide-vue-next';
 import { Minus } from 'lucide-vue-next';
+import { ArrowLeftFromLine } from 'lucide-vue-next';
+import { ArrowRightFromLine } from 'lucide-vue-next';
 
 import {
   Dialog,
@@ -674,9 +702,16 @@ const tripEditDateRange = ref({ start: null, end: null })
 // Computed property to check if all fields are filled
 const isFormValid = computed(() => {
   if (isEditing.value) {
-    return editTripName.value.trim() !== '' && currentDestinationTags.value.length > 0
+    return editTripName.value.trim() !== '' && 
+           currentDestinationTags.value.length > 0 &&
+           value.value.start &&
+           value.value.end &&
+           category.value !== ''
   } else {
-    return currentDestinationTags.value.length > 0
+    return currentDestinationTags.value.length > 0 &&
+           value.value.start &&
+           value.value.end &&
+           category.value !== ''
   }
 })
 
@@ -892,8 +927,8 @@ function updateTrip() {
       ...selectedTrip.value,
       name: editTripName.value,
       destination: currentDestinationTags.value,
-      startDate: selectedDateRange.value.start,
-      endDate: selectedDateRange.value.end,
+      startDate: value.value.start,
+      endDate: value.value.end,
       category: category.value,
     }
 
@@ -1220,6 +1255,12 @@ function toggleMapPreview(place) {
 
 function deletePlace(placeToDelete) {
   addedPlaces.value = addedPlaces.value.filter(place => place.id !== placeToDelete.id)
+}
+
+const isSidebarCollapsed = ref(false)
+
+function toggleSidebar() {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
 </script>
