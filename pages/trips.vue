@@ -181,8 +181,7 @@
                   v-model="tripEditDateRange" 
                   :initial-focus="true"
                   :number-of-months="1"
-                  @update:start-value="updateStartDate"
-                  @update:end-value="updateEndDate"
+                  @update:model-value="updateTripEditDateRange"
                 />
                 <div class="mt-4 flex justify-end gap-2">
                   <Button @click="closePopover" variant="outline" size="sm">Cancel</Button>
@@ -731,8 +730,8 @@ function selectTrip(trip: Trip) {
 }
 
 function formatDateRange(trip: Trip) {
-  if (!trip) return ''
-  return `${formatDateForDisplay(trip.startDate)} - ${formatDateForDisplay(trip.endDate)}`
+  if (!trip || !trip.startDate || !trip.endDate) return 'No date set';
+  return `${formatDateForDisplay(trip.startDate)} - ${formatDateForDisplay(trip.endDate)}`;
 }
 
 function calculateDaysAndNights(trip: Trip) {
@@ -931,43 +930,34 @@ watch(() => selectedTrip.value, (newTrip) => {
   }
 }, { immediate: true })
 
-function updateStartDate(date) {
-  tripEditDateRange.value.start = date
-}
-
-function updateEndDate(date) {
-  tripEditDateRange.value.end = date
-}
-
-function saveDateRange() {
-  if (selectedTrip.value && tripEditDateRange.value.start && tripEditDateRange.value.end) {
-    selectedTrip.value.startDate = tripEditDateRange.value.start
-    selectedTrip.value.endDate = tripEditDateRange.value.end
-
-    // Update the trip in the appropriate list
-    const lists = [ongoingTrips, upcomingTrips, pastTrips]
-    lists.forEach(list => {
-      const index = list.value.findIndex(trip => trip.id === selectedTrip.value?.id)
-      if (index !== -1) {
-        list.value[index] = { ...selectedTrip.value }
-      }
-    })
-
-    saveTripsToLocalStorage()
-  }
-}
-
 function closePopover() {
-  isDatePopoverOpen.value = false
+  isDatePopoverOpen.value = false;
 }
 
 function saveDateRangeAndClose() {
   if (selectedTrip.value && tripEditDateRange.value.start && tripEditDateRange.value.end) {
-    selectedTrip.value.startDate = tripEditDateRange.value.start
-    selectedTrip.value.endDate = tripEditDateRange.value.end
-    updateTripDates(selectedTrip.value)
+    selectedTrip.value.startDate = tripEditDateRange.value.start;
+    selectedTrip.value.endDate = tripEditDateRange.value.end;
+    
+    // Update the trip in the appropriate list
+    const lists = [ongoingTrips, upcomingTrips, pastTrips];
+    lists.forEach(list => {
+      const index = list.value.findIndex(trip => trip.id === selectedTrip.value?.id);
+      if (index !== -1) {
+        list.value[index] = { ...selectedTrip.value };
+      }
+    });
+    
+    saveTripsToLocalStorage();
+    
+    // Force re-render of the badge
+    selectedTrip.value = { ...selectedTrip.value };
   }
-  isDatePopoverOpen.value = false
+  isDatePopoverOpen.value = false;
+}
+
+function updateTripEditDateRange(newValue) {
+  tripEditDateRange.value = newValue;
 }
 
 const currentInputValue = ref('')
