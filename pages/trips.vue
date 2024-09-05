@@ -171,7 +171,7 @@
       <!-- Buttons container -->
       <div :class="[
         'flex',
-        isSidebarCollapsed ? 'flex-col items-center gap-4' : 'justify-end'
+        isSidebarCollapsed ? 'flex-col items-center gap-4' : 'justify-start'
       ]">
         <!-- Toggle sidebar button -->
         <Button 
@@ -308,60 +308,79 @@
                 <div class="flex flex-col gap-5">
 
                   <div class="border p-4 rounded-md flex flex-col gap-4 relative">
-                    <Minus class="w-5 h-5 rounded-full hover:text-red-500 absolute top-2 right-2" />
-                    <div class="flex flex-col gap-2">
-                      <label class="block text-sm font-medium text-gray-700">Title</label>
-                      <Input 
-                        placeholder="Lunch at Pacha's Coffee"
-                        class="w-full font-normal"
-                      />
-                    </div>
-                    <div class="flex flex-col gap-2">
-                      <div class="flex flex-row gap-1">
-                        <label class="block text-sm font-medium text-gray-700">Address</label>
-                        <label class="block text-sm font-normal italic text-gray-500">(optional)</label>
-                        </div>                      <Input 
-                        placeholder="149 Yellow Avenue, New York"
-                        class="w-full font-normal" 
-                      />
-                    </div>
-                    
-                    <Separator class="text-neutral-500 font-medium" label="or" />
 
-                  <!-- Add this new section -->
-                    <div class="flex flex-col gap-2">
-                      <label class="block text-sm font-medium text-gray-700">Google Maps link</label>
-                      <Input 
-                        v-model="placeLink" 
-                        placeholder="https://www.google.com/maps/..." 
-                        class="flex-grow placeholder:text-neutral-500 placeholder:font-normal font-normal"
-                      />
-                      <Button @click="addPlace" :disabled="!isValidGoogleMapsLink"><Plus /></Button>
-                    </div>
-
-                    <Separator class="text-neutral-500 font-medium" label="" />
-
-
-                    <div class="flex flex-col gap-2">
-                      <div class="flex flex-row gap-1">
-                      <label class="block text-sm font-medium text-gray-700">Comments</label>
-                      <label class="block text-sm font-normal italic text-gray-500">(optional)</label>
-                      </div>
-                      <Input 
-                        placeholder="Order their purple corn drink"
-                        class="w-full font-normal" 
-                      />
-                    </div>
-                    <Button 
-                    class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row mt-2" 
-                  >
-                    <Bike class="app" :stroke-width="2" />
-                    <span class="pl-2">Add plans</span>
-                    </Button>
+                    <Tabs default-value="manual" class="w-full">
+                      <TabsList class="w-full">
+                        <TabsTrigger value="manual" class="flex-1">
+                          Manual
+                        </TabsTrigger>
+                        <TabsTrigger value="google-maps" class="flex-1">
+                          Google Maps
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="manual" class="pt-4">
+                        <div class="max-w-[400px] space-y-4">
+                          <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Title</label>
+                            <Input 
+                              placeholder="Lunch at Pacha's Coffee"
+                              class="w-full font-normal"
+                            />
+                          </div>
+                          <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Address</label>
+                            <Input 
+                              placeholder="149 Yellow Avenue, New York"
+                              class="w-full font-normal" 
+                            />
+                          </div>
+                          <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Comments</label>
+                            <Input 
+                              placeholder="Order their purple corn drink"
+                              class="w-full font-normal" 
+                            />
+                          </div>
+                          <Button 
+                            class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row w-full" 
+                          >
+                            <Bike class="app" :stroke-width="2" />
+                            <span class="pl-2">Add plans</span>
+                          </Button>
+                        </div>
+                      </TabsContent>
+                      <TabsContent value="google-maps" class="pt-4">
+                        <div class="max-w-[400px] space-y-4">
+                          <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Google Maps link</label>
+                            <Input 
+                              v-model="placeLink" 
+                              placeholder="https://www.google.com/maps/..." 
+                              class="w-full font-normal"
+                            />
+                          </div>
+                          <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Comments</label>
+                            <Input 
+                              placeholder="Order their purple corn drink"
+                              class="w-full font-normal" 
+                            />
+                          </div>
+                          <Button 
+                            @click="addPlace" 
+                            :disabled="!isValidGoogleMapsLink"
+                            class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row w-full" 
+                          >
+                            <Bike class="app" :stroke-width="2" />
+                            <span class="pl-2">Add plans</span>
+                          </Button>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  
                   </div>
-                  
-                  
-                  
+                
                   <!-- List of added places -->
                   <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col border border-neutral-200 rounded-lg mt-2 group">
                     <div class="flex flex-row">
