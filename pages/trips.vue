@@ -397,8 +397,6 @@
                             </a>
                           </div>
                           <div class="text-sm font-normal text-gray-500">{{ place.address }}</div>
-                          <div v-if="place.phoneNumber !== 'Not available'" class="text-sm font-normal text-gray-500">📞 {{ place.phoneNumber }}</div>
-                          <div v-if="place.rating !== 'Not rated'" class="text-sm font-normal text-gray-500">⭐ {{ place.rating.toFixed(1) }} ({{ place.reviewCount }} reviews)</div>
                         </div>
                       </div>
                       <div class="flex flex-col justify-between">
@@ -605,6 +603,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
+import { Loader } from '@googlemaps/js-api-loader';
 
 import {
   AlertDialog,
@@ -1197,17 +1197,17 @@ function extractCoordinates(url: string): { lat: string, lng: string } | null {
   return null;
 }
 
-function getPlacePreviewUrl(place: { originalUrl: string, name: string }): string {
-  const coords = extractCoordinates(place.originalUrl);
+function getPlacePreviewUrl(place: { originalUrl: string, name: string, id: string }): string {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   
-  if (coords) {
-    return `https://www.google.com/maps/embed/v1/view?key=${apiKey}&center=${coords.lat},${coords.lng}&zoom=18`;
-  } else {
-    // Fallback to search by name if coordinates are not found
-    const encodedName = encodeURIComponent(place.name);
-    return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedName}`;
+  // If we have a place_id, use it for the most accurate result
+  if (place.id) {
+    return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=place_id:${place.id}`;
   }
+  
+  // Fallback to using the name if place_id is not available
+  const encodedName = encodeURIComponent(place.name);
+  return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedName}`;
 }
 
 async function addPlace() {
