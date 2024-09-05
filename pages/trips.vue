@@ -223,7 +223,7 @@
           </AlertDialog>
         </div>
         </div>
-        <div class="h-[calc(100vh-110px)] flex flex-col gap-3 pb-5 overflow-y-auto">
+        <div class="h-[calc(100vh-110px)] flex flex-col gap-3 overflow-y-auto">
           <div v-if="selectedTrip" class="">
             <ResizablePanelGroup direction="horizontal" class="">
               <ResizablePanel class="flex flex-col gap-5 pt-5 pl-6" :default-size="70">
@@ -276,10 +276,9 @@
                 </div>
 
               </ResizablePanel>
-              <ResizableHandle with-handle class="ml-5" />
+              <ResizableHandle class="ml-5 h-screen" />
               <ResizablePanel class="pt-5 pr-6 pl-5 bg-white text-md font-semibold min-w-[350px]" :default-size="30">
                 
-               
                 <div class="flex flex-col gap-5">
 
                   <div class="border p-4 rounded-md flex flex-col gap-4 relative">
@@ -438,8 +437,6 @@
           </div>
         </div>
       </div>
-
-      
 
       <div v-else class="flex justify-center items-center h-full text-sm font-medium text-neutral-400">
         Create or select a trip to start your planning.
