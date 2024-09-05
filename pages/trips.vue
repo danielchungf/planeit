@@ -261,44 +261,9 @@
                     <BedDouble class="app" :stroke-width="2" />
                     <span class="pl-2">Add accommodation</span>
                   </Button>
-               
-                <!-- Accomodation starts -->
-                <!-- <div class="flex flex-row gap-2 border border-neutral-200 p-4 rounded-lg">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger as-child class="">
-                        <BedDouble class="text-sky-600" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Accommodation</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <div class="flex flex-col gap-1 group">
-                    <div class="flex flex-row gap-2 items-center">
-                    <label for="accomodation" class="text-sm font-medium mt-0.5">Hotel Paris</label>
-                      <div class="flex flex-row gap-2 items-center group">
-                        <Button 
-                          class="cursor-pointer rounded-full w-4 h-4 p-0 flex items-center justify-center border-none hover:bg-transparent bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        >
-                          <Pencil class="text-gray-400 w-4 h-4 hover:text-gray-600 transition-colors duration-200" />
-                        </Button>
-                      </div>
-                    </div>
-                    <label for="address" class="text-sm font-normal">1831 Lamont St, San Francisco, CA</label>
-                    <label for="comments"class="text-sm font-normal">Camila already paid for this.</label>
-                  </div>  
-                </div> -->
-                <!-- Accomodation ends -->   
-
                 </div>           
                 <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center justify-between border border-neutral-200 group">
                   <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
-                  <!-- <Button 
-                    class="cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-transparent border border-gray-300 hover:bg-neutral-100 hover:border-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  >
-                    <Eraser class="text-gray-600 w-4 h-4 group-hover:text-gray-800 transition-colors duration-200" />
-                  </Button> -->
                 </div>
 
               </ResizablePanel>
@@ -320,38 +285,43 @@
                       </TabsList>
                       
                       <TabsContent value="manual" class="pt-4">
-                        <div class="max-w-[400px] space-y-4">
+                        <div class="w-full space-y-4">
                           <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Title</label>
                             <Input 
+                              v-model="planTitle"
                               placeholder="Lunch at Pacha's Coffee"
                               class="w-full font-normal"
                             />
                           </div>
                           <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Address</label>
+                            <label class="block text-sm font-medium text-gray-700">Address (optional)</label>
                             <Input 
+                              v-model="planAddress"
                               placeholder="149 Yellow Avenue, New York"
                               class="w-full font-normal" 
                             />
                           </div>
                           <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Comments</label>
+                            <label class="block text-sm font-medium text-gray-700">Comments (optional)</label>
                             <Input 
+                              v-model="planComments"
                               placeholder="Order their purple corn drink"
                               class="w-full font-normal" 
                             />
                           </div>
                           <Button 
-                            class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row w-full" 
+                            @click="addManualPlan"
+                            :disabled="!isManualPlanValid"
+                            class="w-full hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex items-center justify-center" 
                           >
-                            <Bike class="app" :stroke-width="2" />
-                            <span class="pl-2">Add plans</span>
+                            <Bike class="mr-2" :stroke-width="2" />
+                            <span>Add plans</span>
                           </Button>
                         </div>
                       </TabsContent>
                       <TabsContent value="google-maps" class="pt-4">
-                        <div class="max-w-[400px] space-y-4">
+                        <div class="w-full space-y-4">
                           <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Google Maps link</label>
                             <Input 
@@ -370,10 +340,10 @@
                           <Button 
                             @click="addPlace" 
                             :disabled="!isValidGoogleMapsLink"
-                            class="hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex flex-row w-full" 
+                            class="w-full hover:bg-neutral-800 hover:text-white transition-colors duration-300 flex items-center justify-center" 
                           >
-                            <Bike class="app" :stroke-width="2" />
-                            <span class="pl-2">Add plans</span>
+                            <Bike class="mr-2" :stroke-width="2" />
+                            <span>Add plans</span>
                           </Button>
                         </div>
                       </TabsContent>
@@ -382,11 +352,11 @@
                   </div>
                 
                   <!-- List of added places -->
-                  <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col border border-neutral-200 rounded-lg mt-2 group">
-                    <div class="flex flex-row">
-                      <div class="flex justify-between items-center">
-                        <div class="flex flex-col gap-1 p-4">
-                          <div class="text-sm font-medium">
+                  <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col border border-neutral-200 rounded-lg mt-2 group relative">
+                    <div class="p-4">
+                      <div class="flex flex-col gap-1">
+                        <div class="text-sm font-medium pr-8"> <!-- Added right padding to prevent text overlap with buttons -->
+                          <template v-if="place.isGoogleMapsPlace">
                             <a 
                               :href="place.originalUrl" 
                               target="_blank" 
@@ -395,28 +365,32 @@
                             >
                               {{ place.name }}
                             </a>
-                          </div>
-                          <div class="text-sm font-normal text-gray-500">{{ place.address }}</div>
+                          </template>
+                          <template v-else>
+                            {{ place.name }}
+                          </template>
                         </div>
-                      </div>
-                      <div class="flex flex-col justify-between">
-
-                        <Button 
-                          @click="deletePlace(place)" 
-                          class="bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        >
-                          <Trash2 class="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          @click="toggleMapPreview(place)" 
-                          class="bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        >
-                          <MapPinned class="h-4 w-4" />
-                        </Button>
-                        
+                        <div v-if="place.address !== 'No address provided'" class="text-sm font-normal text-gray-500">{{ place.address }}</div>
+                        <div v-if="place.comments" class="text-sm font-normal text-gray-500">{{ place.comments }}</div>
                       </div>
                     </div>
-                    <div v-if="place.showPreview" class="mt-2">
+                    
+                    <Button 
+                      @click="deletePlace(place)" 
+                      class="absolute top-[-10px] right-[-10px] cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-white border border-gray-300 hover:bg-red-100 hover:border-red-200 group opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    >
+                      <Trash2 class="text-gray-600 w-4 h-4 group-hover:text-red-500 transition-colors duration-200" />
+                    </Button>
+                    
+                    <Button 
+                      v-if="place.isGoogleMapsPlace"
+                      @click="toggleMapPreview(place)" 
+                      class="absolute top-2 right-8 bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    >
+                      <MapPinned class="h-4 w-4" />
+                    </Button>
+
+                    <div v-if="place.isGoogleMapsPlace && place.showPreview" class="mt-2">
                       <iframe
                         :src="getPlacePreviewUrl(place)"
                         width="100%" 
@@ -604,7 +578,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-import { Loader } from '@googlemaps/js-api-loader';
 
 import {
   AlertDialog,
@@ -1150,7 +1123,7 @@ function updateTripDates(newValue) {
 }
 
 const placeLink = ref('')
-const addedPlaces = ref<Array<{id: string, name: string, address: string, showPreview: boolean, phoneNumber: string, rating: number, reviewCount: number, originalUrl: string}>>([])
+const addedPlaces = ref<Array<{id: string, name: string, address: string, showPreview: boolean, phoneNumber: string, rating: number, reviewCount: number, originalUrl: string, isGoogleMapsPlace: boolean}>>([])
 
 const isValidGoogleMapsLink = computed(() => {
   const link = placeLink.value.trim();
@@ -1262,7 +1235,8 @@ function handlePlaceResult(place, originalUrl: string) {
     rating: place.rating || 'Not rated',
     reviewCount: place.user_ratings_total || 0,
     showPreview: false,
-    originalUrl: originalUrl
+    originalUrl: originalUrl,
+    isGoogleMapsPlace: true
   });
   console.log("Place added to list:", addedPlaces.value);
   placeLink.value = '';
@@ -1280,6 +1254,38 @@ const isSidebarCollapsed = ref(false)
 
 function toggleSidebar() {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+// Add these imports if not already present
+import { ref, computed } from 'vue'
+
+// Add these to your component's setup function or script setup
+const planTitle = ref('')
+const planAddress = ref('')
+const planComments = ref('')
+
+const isManualPlanValid = computed(() => planTitle.value.trim() !== '')
+
+function addManualPlan() {
+  if (isManualPlanValid.value) {
+    addedPlaces.value.push({
+      id: Date.now().toString(), // Generate a unique ID
+      name: planTitle.value,
+      address: planAddress.value || 'No address provided',
+      phoneNumber: 'Not available',
+      rating: 'Not rated',
+      reviewCount: 0,
+      showPreview: false,
+      originalUrl: '',
+      comments: planComments.value || '',
+      isGoogleMapsPlace: false
+    })
+
+    // Reset the form
+    planTitle.value = ''
+    planAddress.value = ''
+    planComments.value = ''
+  }
 }
 
 </script>
