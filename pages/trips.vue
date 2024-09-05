@@ -331,7 +331,7 @@
                             />
                           </div>
                           <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Comments</label>
+                            <label class="block text-sm font-medium text-gray-700">Comments (optional)</label>
                             <Input 
                               placeholder="Order their purple corn drink"
                               class="w-full font-normal" 

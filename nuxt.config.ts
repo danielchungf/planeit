@@ -3,6 +3,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxtjs/tailwindcss", "shadcn-nuxt"],
 
+  build: {
+    transpile: ['@googlemaps/js-api-loader']
+  },
+
   shadcn: {
     /**
      * Prefix for all the imported component
