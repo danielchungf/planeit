@@ -262,8 +262,73 @@
                     <span class="pl-2">Add accommodation</span>
                   </Button>
                 </div>           
-                <div v-for="(day, index) in tripDays" :key="index" class="bg-neutral-50 p-4 rounded-lg flex items-center justify-between border border-neutral-200 group">
-                  <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
+                <div v-for="(day, index) in tripDays" :key="index">
+                  <div class="bg-neutral-50 p-4 rounded-lg flex flex-col border border-neutral-200 group mb-2">
+                    <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
+                  </div>
+                  <!-- Add this section to display assigned places -->
+                  <div v-if="getDayPlans(index).length > 0" class="space-y-2 ml-4">
+                    <div v-for="place in getDayPlans(index)" :key="place.id" 
+                         class="flex flex-col border border-neutral-200 rounded-lg mt-2 group relative bg-white p-4">
+                      <div class="flex flex-col gap-1">
+                        <div class="text-sm font-medium pr-8">
+                          <div v-if="place.isGoogleMapsPlace" class="flex flex-row gap-1 items-center">
+                            <a 
+                              :href="place.originalUrl" 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              class="text-blue-500 hover:text-blue-700 hover:underline"
+                            >
+                              {{ place.name }}
+                            </a>
+                            <Button 
+                              v-if="place.isGoogleMapsPlace"
+                              @click="toggleMapPreview(place)" 
+                              class="bg-transparent w-8 h-8 p-0 hover:bg-transparent text-neutral-400 hover:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            >
+                              <MapPinned class="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <template v-else>
+                            {{ place.name }}
+                          </template>
+                        </div>
+                        <div v-if="place.address !== 'No address provided'" class="text-sm font-normal text-gray-500">{{ place.address }}</div>
+                        <div v-if="place.comments" class="text-sm font-normal text-gray-500">{{ place.comments }}</div>
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            class="absolute top-[-10px] left-[-10px] cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-white border border-gray-300 hover:bg-neutral-100 hover:border-gray-300 group opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          >
+                            <Forward class="text-gray-600 w-4 h-4 group-hover:text-gray-800 transition-colors duration-200" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent class="w-56">
+                          <DropdownMenuItem @click="unassignPlace(place, index)" class="text-gray-500">
+                            Unassign
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem v-for="(otherDay, otherIndex) in tripDays" :key="otherIndex" @click="reassignPlace(place, index, otherIndex)" v-if="otherIndex !== index">
+                            {{ formatDayLabel(otherDay, otherIndex) }}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      <div v-if="place.isGoogleMapsPlace && place.showPreview" class="mt-2">
+                        <iframe
+                          :src="getPlacePreviewUrl(place)"
+                          width="100%" 
+                          height="200" 
+                          style="border:0;" 
+                          allowfullscreen="" 
+                          loading="lazy" 
+                          referrerpolicy="no-referrer-when-downgrade"
+                        ></iframe>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
               </ResizablePanel>
@@ -352,11 +417,11 @@
                   </div>
                 
                   <!-- List of added places -->
-                  <div v-for="place in addedPlaces" :key="place.id" class="flex flex-col border border-neutral-200 rounded-lg mt-2 group relative">
+                  <div v-for="place in unassignedPlaces" :key="place.id" class="flex flex-col border border-neutral-200 rounded-lg mt-2 group relative">
                     <div class="p-4">
                       <div class="flex flex-col gap-1">
                         <div class="text-sm font-medium pr-8"> <!-- Added right padding to prevent text overlap with buttons -->
-                          <template v-if="place.isGoogleMapsPlace">
+                          <div v-if="place.isGoogleMapsPlace" class="flex flex-row gap-1 items-center">
                             <a 
                               :href="place.originalUrl" 
                               target="_blank" 
@@ -365,7 +430,14 @@
                             >
                               {{ place.name }}
                             </a>
-                          </template>
+                            <Button 
+                              v-if="place.isGoogleMapsPlace"
+                              @click="toggleMapPreview(place)" 
+                              class="bg-transparent w-8 h-8 p-0 hover:bg-transparent text-neutral-400 hover:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            >
+                                <MapPinned class="h-4 w-4" />
+                            </Button>
+                          </div>
                           <template v-else>
                             {{ place.name }}
                           </template>
@@ -381,14 +453,21 @@
                     >
                       <Trash2 class="text-gray-600 w-4 h-4 group-hover:text-red-500 transition-colors duration-200" />
                     </Button>
-                    
-                    <Button 
-                      v-if="place.isGoogleMapsPlace"
-                      @click="toggleMapPreview(place)" 
-                      class="absolute top-2 right-8 bg-transparent border-none hover:bg-transparent text-neutral-400 hover:text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    >
-                      <MapPinned class="h-4 w-4" />
-                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          class="absolute top-[-10px] left-[-10px] cursor-pointer rounded-full w-8 h-8 p-0 flex items-center justify-center bg-white border border-gray-300 hover:bg-neutral-100 hover:border-gray-300 group opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <Undo2 class="text-gray-600 w-4 h-4 group-hover:text-gray-800 transition-colors duration-200" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent class="w-56">
+                        <DropdownMenuItem v-for="(day, index) in tripDays" :key="index" @click="assignPlaceToDay(place, index)">
+                          {{ formatDayLabel(day, index) }}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
                     <div v-if="place.isGoogleMapsPlace && place.showPreview" class="mt-2">
                       <iframe
@@ -557,6 +636,14 @@ import { Star } from 'lucide-vue-next';
 import { Minus } from 'lucide-vue-next';
 import { ArrowLeftFromLine } from 'lucide-vue-next';
 import { ArrowRightFromLine } from 'lucide-vue-next';
+import { Forward, Undo2 } from 'lucide-vue-next'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 import {
   Dialog,
@@ -1286,6 +1373,46 @@ function addManualPlan() {
     planAddress.value = ''
     planComments.value = ''
   }
+}
+
+const dayPlans = ref<{ [key: number]: Array<any> }>({})
+
+const unassignedPlaces = computed(() => {
+  const assignedPlaceIds = Object.values(dayPlans.value).flat().map(place => place.id)
+  return addedPlaces.value.filter(place => !assignedPlaceIds.includes(place.id))
+})
+
+function assignPlaceToDay(place, dayIndex) {
+  if (!dayPlans.value[dayIndex]) {
+    dayPlans.value[dayIndex] = []
+  }
+  dayPlans.value[dayIndex].push(place)
+  // Force Vue to detect the change
+  dayPlans.value = { ...dayPlans.value }
+}
+
+function getDayPlans(dayIndex: number) {
+  return dayPlans.value[dayIndex] || []
+}
+
+function unassignPlace(place, dayIndex) {
+  dayPlans.value[dayIndex] = dayPlans.value[dayIndex].filter(p => p.id !== place.id)
+  // Force Vue to detect the change
+  dayPlans.value = { ...dayPlans.value }
+}
+
+function reassignPlace(place, fromDayIndex, toDayIndex) {
+  // Remove from current day
+  dayPlans.value[fromDayIndex] = dayPlans.value[fromDayIndex].filter(p => p.id !== place.id)
+  
+  // Add to new day
+  if (!dayPlans.value[toDayIndex]) {
+    dayPlans.value[toDayIndex] = []
+  }
+  dayPlans.value[toDayIndex].push(place)
+  
+  // Force Vue to detect the change
+  dayPlans.value = { ...dayPlans.value }
 }
 
 </script>
