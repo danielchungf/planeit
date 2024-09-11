@@ -1,6 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+  runtimeConfig: {
+    GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY
+  },
   modules: ["@nuxtjs/tailwindcss", "shadcn-nuxt"],
 
   build: {

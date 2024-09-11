@@ -2,7 +2,8 @@ import { defineEventHandler } from 'h3'
 
 export default defineEventHandler(async (event) => {
   const { id, name } = getQuery(event)
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+  const config = useRuntimeConfig(event)
+  const apiKey = config.GOOGLE_MAPS_API_KEY
 
   if (id) {
     return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=place_id:${id}`
