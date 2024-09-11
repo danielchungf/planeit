@@ -318,7 +318,7 @@
 
                       <div v-if="place.isGoogleMapsPlace && place.showPreview" class="mt-2">
                         <iframe
-                          :src="getPlacePreviewUrl(place)"
+                          :src="place.previewUrl"
                           width="100%" 
                           height="200" 
                           style="border:0;" 
@@ -471,7 +471,7 @@
 
                     <div v-if="place.isGoogleMapsPlace && place.showPreview" class="mt-2">
                       <iframe
-                        :src="getPlacePreviewUrl(place)"
+                        :src="place.previewUrl"
                         width="100%" 
                         height="200" 
                         style="border:0;" 
@@ -1257,17 +1257,18 @@ function extractCoordinates(url: string): { lat: string, lng: string } | null {
   return null;
 }
 
-function getPlacePreviewUrl(place: { originalUrl: string, name: string, id: string }): string {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  
-  // If we have a place_id, use it for the most accurate result
-  if (place.id) {
-    return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=place_id:${place.id}`;
+async function getPlacePreviewUrl(place: { name: string, id: string }): Promise<string> {
+  try {
+    const params = new URLSearchParams(place.id ? { id: place.id } : { name: place.name })
+    const response = await fetch(`/api/googlemaps/googlemaps?${params}`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch place preview URL')
+    }
+    return await response.text()
+  } catch (error) {
+    console.error('Error fetching place preview URL:', error)
+    return ''
   }
-  
-  // Fallback to using the name if place_id is not available
-  const encodedName = encodeURIComponent(place.name);
-  return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedName}`;
 }
 
 async function addPlace() {
@@ -1329,8 +1330,11 @@ function handlePlaceResult(place, originalUrl: string) {
   placeLink.value = '';
 }
 
-function toggleMapPreview(place) {
-  place.showPreview = !place.showPreview;
+async function toggleMapPreview(place) {
+  place.showPreview = !place.showPreview
+  if (place.showPreview && !place.previewUrl) {
+    place.previewUrl = await getPlacePreviewUrl(place)
+  }
 }
 
 function deletePlace(placeToDelete) {
