@@ -262,12 +262,28 @@
                     <span class="pl-2">Add accommodation</span>
                   </Button>
                 </div>           
-                <div v-for="(day, index) in tripDays" :key="index">
-                  <div class="bg-neutral-50 p-4 rounded-lg flex flex-col border border-neutral-200 group mb-2">
+                <div v-for="(day, index) in tripDays" :key="index"> <!-- Maintained existing margin -->
+                  <div 
+                    @click="toggleDayPlans(index)"
+                    class="bg-neutral-50 p-4 rounded-lg flex flex-row justify-between items-center border border-neutral-200 group"
+                    :class="{'cursor-pointer': getDayPlans(index).length > 0}"
+                  >
                     <h3 class="text-md font-semibold">{{ formatDayLabel(day, index) }}</h3>
+                    <div v-if="getDayPlans(index).length > 0" class="flex items-center">
+                      <span class="text-sm text-gray-500 mr-2 select-none">
+                        {{ getDayPlans(index).length === 1 ? '1 plan' : `${getDayPlans(index).length} plans` }}
+                      </span>
+                      <ChevronDown 
+                        :class="{'transform rotate-180': expandedDays[index]}"
+                        class="w-5 h-5 text-gray-500 transition-transform duration-200"
+                      />
+                    </div>
                   </div>
                   <!-- Add this section to display assigned places -->
-                  <div v-if="getDayPlans(index).length > 0" class="space-y-2 ml-4">
+                  <div 
+                    v-if="getDayPlans(index).length > 0 && expandedDays[index]"
+                    class="space-y-2 ml-4 mt-2"
+                  > <!-- Maintained existing margin and spacing -->
                     <div v-for="place in getDayPlans(index)" :key="place.id" 
                          class="flex flex-col border border-neutral-200 rounded-lg mt-2 group relative bg-white p-4">
                       <div class="flex flex-col gap-1">
@@ -305,7 +321,7 @@
                             <Forward class="text-gray-600 w-4 h-4 group-hover:text-gray-800 transition-colors duration-200" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent class="w-56">
+                        <DropdownMenuContent class="w-56 max-h-[300px] overflow-y-auto">
                           <DropdownMenuItem @click="unassignPlace(place, index)" class="text-gray-500">
                             Unassign
                           </DropdownMenuItem>
@@ -462,7 +478,7 @@
                           <Undo2 class="text-gray-600 w-4 h-4 group-hover:text-gray-800 transition-colors duration-200" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent class="w-56">
+                      <DropdownMenuContent class="w-56 max-h-[300px] overflow-y-auto">
                         <DropdownMenuItem v-for="(day, index) in tripDays" :key="index" @click="assignPlaceToDay(place, index)">
                           {{ formatDayLabel(day, index) }}
                         </DropdownMenuItem>
@@ -637,6 +653,8 @@ import { Minus } from 'lucide-vue-next';
 import { ArrowLeftFromLine } from 'lucide-vue-next';
 import { ArrowRightFromLine } from 'lucide-vue-next';
 import { Forward, Undo2 } from 'lucide-vue-next'
+import { ChevronDown } from 'lucide-vue-next';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1260,11 +1278,14 @@ function extractCoordinates(url: string): { lat: string, lng: string } | null {
 async function getPlacePreviewUrl(place: { name: string, id: string }): Promise<string> {
   try {
     const params = new URLSearchParams(place.id ? { id: place.id } : { name: place.name })
+    console.log('Fetching URL:', `/api/googlemaps/googlemaps?${params}`)
     const response = await fetch(`/api/googlemaps/googlemaps?${params}`)
     if (!response.ok) {
-      throw new Error('Failed to fetch place preview URL')
+      throw new Error(`Failed to fetch place preview URL: ${response.status} ${response.statusText}`)
     }
-    return await response.text()
+    const url = await response.text()
+    console.log('Received URL:', url)
+    return url
   } catch (error) {
     console.error('Error fetching place preview URL:', error)
     return ''
@@ -1391,6 +1412,10 @@ function assignPlaceToDay(place, dayIndex) {
     dayPlans.value[dayIndex] = []
   }
   dayPlans.value[dayIndex].push(place)
+  // If this is the first plan for the day, expand it automatically
+  if (dayPlans.value[dayIndex].length === 1) {
+    expandedDays.value[dayIndex] = true
+  }
   // Force Vue to detect the change
   dayPlans.value = { ...dayPlans.value }
 }
@@ -1418,6 +1443,27 @@ function reassignPlace(place, fromDayIndex, toDayIndex) {
   // Force Vue to detect the change
   dayPlans.value = { ...dayPlans.value }
 }
+
+const expandedDays = ref({})
+
+function toggleDayPlans(index: number) {
+  if (getDayPlans(index).length > 0) {
+    expandedDays.value[index] = !expandedDays.value[index]
+  }
+}
+
+// Watch for changes in dayPlans
+watch(() => dayPlans.value, (newDayPlans, oldDayPlans) => {
+  Object.keys(newDayPlans).forEach((dayIndex) => {
+    const newPlansCount = newDayPlans[dayIndex].length
+    const oldPlansCount = oldDayPlans?.[dayIndex]?.length || 0
+
+    // If a new plan was added and it's the first plan for that day, expand it
+    if (newPlansCount === 1 && oldPlansCount === 0) {
+      expandedDays.value[dayIndex] = true
+    }
+  })
+}, { deep: true })
 
 </script>
 
